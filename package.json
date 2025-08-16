@@ -1,0 +1,29 @@
+{
+  "name": "financial-calcs",
+  "version": "1.1.0",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudful-io/financial-calcs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cloudful-io/financial-calcs/issues"
+  },
+  "homepage": "https://github.com/cloudful-io/financial-calcs#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
