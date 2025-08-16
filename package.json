@@ -1,7 +1,11 @@
 {
   "name": "financial-calcs",
   "version": "1.2.0",
-  "main": "index.js",
+  "main": "dist/index.js",           
+  "types": "dist/index.d.ts",        
+  "files": [
+    "dist"                           
+  ],
   "directories": {
     "test": "tests"
   },
@@ -13,14 +17,21 @@
     "type": "git",
     "url": "git+https://github.com/cloudful-io/financial-calcs.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Cloudful.io",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/cloudful-io/financial-calcs/issues"
   },
   "homepage": "https://github.com/cloudful-io/financial-calcs#readme",
-  "description": "",
+  "description": "Reusable financial calculation library for FERS, Social Security, retirement savings, and mortgage amortization",
+  "keywords": [
+    "financial",
+    "calculations",
+    "FERS",
+    "Social Security",
+    "retirement",
+    "mortgage"
+  ],
   "devDependencies": {
     "@types/node": "^24.3.0",
     "ts-node": "^10.9.2",
