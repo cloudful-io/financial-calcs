@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateFersProjection } from '../src/pension/fers';
 
-describe('FERS Projection', () => {
+describe('FERS Projection', () => { 
   it('should calculate projections correctly', () => {
     const result = calculateFersProjection({
       startYear: 2025,
