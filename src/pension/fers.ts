@@ -17,6 +17,7 @@ export interface FersPensionProjectionRow {
   salary?: number;
   pension?: number;
   monthlyPension?: number;
+  salaryGrowthRate: number;
   colaApplied: number;
 }
 
@@ -51,15 +52,24 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
   const data: FersPensionProjectionRow[] = [];
   for (let year = startYear; year < endYear; year++) {
     const age = year - birthYear;
-    const row: FersPensionProjectionRow = { year, age, colaApplied: 0 };
+    const row: FersPensionProjectionRow = { year, age, salaryGrowthRate: 0, colaApplied: 0 };
 
+    // Working Age
     if (year < retirementYear) {
       const salary = salaries[year - startYear];
     
       if (salary !== undefined) {
         row.salary = salary;
       }
-    } else {
+      row.salaryGrowthRate = salaryGrowthRate;
+      row.pension = 0;
+      row.monthlyPension = 0;
+    }
+    // Retirement Age 
+    else {
+      // Set salary to 0
+      row.salary = 0;
+
       if (age >= 63 && year > retirementYear) {
         pension *= 1 + colaPercent / 100;
         row.colaApplied = colaPercent;
