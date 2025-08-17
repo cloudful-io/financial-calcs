@@ -33,3 +33,6 @@ yarn-error.log*
 
 # Optional: test coverage
 coverage/
+
+package-lock.json
+yarn.lock
