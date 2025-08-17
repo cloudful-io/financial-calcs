@@ -31,7 +31,7 @@ interface FersPensionProjectionRow {
 }
 ```
 
-### Usage
+## Usage
 
 ```ts
 import { calculateFersPensionProjection } from 'financial-calcs';
