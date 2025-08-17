@@ -1,5 +1,10 @@
 # financial-calcs
 
+![npm](https://img.shields.io/npm/v/financial-calcs)
+![npm downloads](https://img.shields.io/npm/dm/financial-calcs)
+![build](https://github.com/cloudful-io/financial-calcs/actions/workflows/publish.yml/badge.svg)
+![license](https://img.shields.io/npm/l/financial-calcs)
+
 A lightweight TypeScript library for financial projections. This package contains **pure calculation functions** for:
 
 - FERS Pension projection
