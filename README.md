@@ -5,9 +5,9 @@
 ![build](https://github.com/cloudful-io/financial-calcs/actions/workflows/publish.yml/badge.svg)
 ![license](https://img.shields.io/npm/l/financial-calcs)
 
-A lightweight TypeScript library for financial projections. This package contains **pure calculation functions** for:
+A lightweight, reusable TypeScript library to perform financial calculation.  This package contains **pure calculation functions** for:
 
-- FERS Pension projection
+- Federal Employee Retirement System (FERS) Pension projection
 - Retirement Savings projection
 
 All functions are decoupled from UI logic and can be used in any TypeScript or JavaScript project.
@@ -39,8 +39,8 @@ interface FersPensionInput {
   serviceStartYear: number;
   retirementAge: number;
   currentSalary: number;
-  salaryGrowthRate: number; // % per year
-  colaPercent: number;      // Cost of Living Adjustment %
+  salaryGrowthRate: number; 
+  colaPercent: number; 
   pensionMultiplier: number;
   yearsToProject: number;
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
@@ -94,9 +94,9 @@ interface RetirementSavingsInput {
   birthYear: number;
   initialBalance: number;
   initialContribution: number;
-  estimatedYield: number;            // percent per year
-  estimatedWithdrawRate: number;     // percent of balance per year
-  contributionIncreaseRate: number;  // percent per year
+  estimatedYield: number;            
+  estimatedWithdrawRate: number;     
+  contributionIncreaseRate: number;
   withdrawStartAge: number;
   yearsToProject: number;
 }
