@@ -1,4 +1,4 @@
-export interface FersInput {
+export interface FersPensionInput {
   startYear: number;
   birthYear: number;
   serviceStartYear: number;
@@ -11,7 +11,7 @@ export interface FersInput {
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
 }
 
-export interface FersProjectionRow {
+export interface FersPensionProjectionRow {
   year: number;
   age: number;
   salary?: number;
@@ -20,7 +20,7 @@ export interface FersProjectionRow {
   colaApplied: number;
 }
 
-export function calculateFersProjection(input: FersInput): FersProjectionRow[] {
+export function calculateFersPensionProjection(input: FersPensionInput): FersPensionProjectionRow[] {
   const {
     startYear, birthYear, serviceStartYear, retirementAge,
     currentSalary, salaryGrowthRate, colaPercent,
@@ -48,10 +48,10 @@ export function calculateFersProjection(input: FersInput): FersProjectionRow[] {
 
   let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
 
-  const data: FersProjectionRow[] = [];
+  const data: FersPensionProjectionRow[] = [];
   for (let year = startYear; year < endYear; year++) {
     const age = year - birthYear;
-    const row: FersProjectionRow = { year, age, colaApplied: 0 };
+    const row: FersPensionProjectionRow = { year, age, colaApplied: 0 };
 
     if (year < retirementYear) {
       const salary = salaries[year - startYear];
