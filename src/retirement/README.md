@@ -1,6 +1,6 @@
-## Retirement Savings Projection
+# Retirement Savings Projection
 
-### Input Type
+## Input Type
 
 ```ts
 interface RetirementSavingsInput {
@@ -16,7 +16,7 @@ interface RetirementSavingsInput {
 }
 ```
 
-### Output Type
+## Output Type
 
 ```ts
 interface RetirementSavingsProjectionRow {
@@ -32,7 +32,7 @@ interface RetirementSavingsProjectionRow {
 }
 ```
 
-### Usage
+## Usage
 
 ```ts
 import { calculateRetirementSavingsProjection } from 'financial-calcs';

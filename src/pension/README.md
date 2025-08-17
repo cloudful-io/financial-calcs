@@ -1,6 +1,6 @@
-## FERS Pension Projection
+# FERS Pension Projection
 
-### Input Type
+## Input Type
 
 ```ts
 interface FersPensionInput {
@@ -17,7 +17,7 @@ interface FersPensionInput {
 }
 ```
 
-### Output Type
+## Output Type
 
 ```ts
 interface FersPensionProjectionRow {
