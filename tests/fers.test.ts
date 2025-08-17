@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { calculateFersProjection } from '../src/pension/fers';
+import { calculateFersPensionProjection } from '../src/pension/fers';
 
 describe('FERS Projection', () => { 
   it('should calculate projections correctly', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2025,
       birthYear: 1970,
       serviceStartYear: 1990,
@@ -22,7 +22,7 @@ describe('FERS Projection', () => {
   });
 
   it('calculates pension for regular retirement', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2025,
       birthYear: 1970,
       serviceStartYear: 1990,
@@ -48,7 +48,7 @@ describe('FERS Projection', () => {
   });
 
   it('applies reduction correctly for MRA + 10 retirement', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2025,
       birthYear: 1970,
       serviceStartYear: 1990,
@@ -69,7 +69,7 @@ describe('FERS Projection', () => {
   });
 
   it('does not apply COLA before age 62 for deferred retirement', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2025,
       birthYear: 1970,
       serviceStartYear: 1990,
@@ -94,7 +94,7 @@ describe('FERS Projection', () => {
   });
 
   it('calculates high-3 correctly', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2020,
       birthYear: 1970,
       serviceStartYear: 2000,
@@ -117,7 +117,7 @@ describe('FERS Projection', () => {
   });
 
   it('applies COLA correctly after retirement', () => {
-    const result = calculateFersProjection({
+    const result = calculateFersPensionProjection({
       startYear: 2025,
       birthYear: 1970,
       serviceStartYear: 1990,
