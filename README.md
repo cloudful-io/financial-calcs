@@ -9,6 +9,7 @@ A lightweight, reusable TypeScript library to perform financial calculation.  Th
 
 - [Federal Employee Retirement System (FERS) Pension projection](./src/pension/README.md)
 - [Retirement Savings projection](./src/retirement/README.md)
+- [Social Security Benefit projection](./src/socialSecurity/README.md)
 
 All functions are decoupled from UI logic and can be used in any TypeScript or JavaScript project.
 
