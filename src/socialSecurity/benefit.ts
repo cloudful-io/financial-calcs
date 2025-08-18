@@ -16,7 +16,7 @@ export interface SocialSecurityBenefitProjectionRow {
 }
 
 // --- Pure calculation function ---
-export function calculateSocialSecurityProjection(
+export function calculateSocialSecurityBenefitProjection(
   input: SocialSecurityBenefitInput
 ): SocialSecurityBenefitProjectionRow[] {
   const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
