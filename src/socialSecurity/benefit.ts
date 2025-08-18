@@ -11,6 +11,7 @@ export interface SocialSecurityBenefitInput {
 export interface SocialSecurityBenefitProjectionRow {
   year: number;
   age: number;
+  colaApplied: number;
   annualBenefit: number;
   monthlyBenefit: number;
 }
@@ -36,17 +37,20 @@ export function calculateSocialSecurityBenefitProjection(
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
     const age = year - birthYear;
+    let colaApplied = 0;
 
     const isClaiming = year >= claimingYear;
     const benefitForYear = isClaiming ? annualBenefit : 0;
 
     if (i > 0 && isClaiming) {
       annualBenefit *= 1 + averageCOLA / 100; // apply COLA increase
+      colaApplied = averageCOLA;
     }
 
     data.push({
       year,
       age,
+      colaApplied,
       annualBenefit: Math.round(benefitForYear),
       monthlyBenefit: Math.round(benefitForYear / 12),
     });
