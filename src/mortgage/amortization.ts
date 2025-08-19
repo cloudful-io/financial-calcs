@@ -40,10 +40,13 @@ export function calculateMortgageAmortization(
 
   const monthlyRate = annualRate / 100 / 12;
   const totalMonths = termYears * 12;
+
   const basePayment =
-    loanAmount *
-    (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) /
-    (Math.pow(1 + monthlyRate, totalMonths) - 1);
+    monthlyRate === 0
+      ? loanAmount / totalMonths
+      : loanAmount *
+        (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) /
+        (Math.pow(1 + monthlyRate, totalMonths) - 1);
 
   let balance = loanAmount;
   const data: AmortizationRow[] = [];
