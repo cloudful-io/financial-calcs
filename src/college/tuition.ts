@@ -20,6 +20,7 @@ export interface CollegeTuitionProjectionRow {
   beginningBalance: number;
   contribution: number;
   yieldPercent: number;
+  tuitionAmount: number;
   annualWithdraw: number;
   endingBalance: number;
 }
@@ -48,23 +49,30 @@ export function calculateCollegeTuitionProjection(
     const year = startYear + i;
     const age = year - birthYear;
     const childAge = year - childBirthYear;
-
     const beginningBalance = balance;
-    const contribution = annualContribution;
 
-    // Calculate tuition withdrawal
-    let annualWithdraw = 0;
+    // Contribution stops after last college year
+    const contribution =
+      year <= childCollegeLastYear ? annualContribution : 0;
+
+    // Yield is always based on beginning balance
+    const yieldAmount = (estimatedYield / 100) * beginningBalance;
+
+    // Tuition cost in future dollars
+    let tuitionAmount = 0;
     if (year >= childCollegeFirstYear && year <= childCollegeLastYear) {
       const yearsSinceStart = year - childCollegeFirstYear;
-      annualWithdraw =
+      tuitionAmount =
         estimatedFirstYearTuition *
         Math.pow(1 + estimatedInflationRate / 100, yearsSinceStart);
     }
 
-    // Apply growth
-    const yieldAmount = (estimatedYield / 100) * (beginningBalance + contribution);
+    // Actual withdrawal is capped at available funds
+    const availableFunds = beginningBalance + contribution + yieldAmount;
+    const annualWithdraw = Math.min(tuitionAmount, availableFunds);
 
-    balance += contribution + yieldAmount - annualWithdraw;
+    // Update balance
+    balance = availableFunds - annualWithdraw;
 
     data.push({
       year,
@@ -73,6 +81,7 @@ export function calculateCollegeTuitionProjection(
       beginningBalance,
       contribution,
       yieldPercent: estimatedYield,
+      tuitionAmount,
       annualWithdraw,
       endingBalance: balance,
     });
