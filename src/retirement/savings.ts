@@ -33,8 +33,15 @@ export function calculateRetirementSavingsProjection(
     withdrawStartAge, yearsToProject
   } = input;
 
-  let balance = initialBalance;
-  let contribution = initialContribution;
+  if (estimatedWithdrawRate < 0) {
+    throw new Error("Withdrawal rate cannot be negative");
+  }
+  // Treat negative balance as 0
+  let balance = initialBalance < 0 ? 0 : initialBalance;
+
+  // Treat negative contribution as 0
+  let contribution = initialContribution < 0 ? 0 : initialContribution;
+
   const data: RetirementSavingsProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {
@@ -45,6 +52,10 @@ export function calculateRetirementSavingsProjection(
     // Adjust contribution after the first year
     if (i > 0) {
       contribution = isWithdrawing ? 0 : contribution * (1 + contributionIncreaseRate / 100);
+    } 
+    // Withdrawing in the first projection year
+    else if (isWithdrawing) {
+      contribution = 0;
     }
 
     const annualWithdraw = isWithdrawing ? (estimatedWithdrawRate / 100) * balance : 0;
