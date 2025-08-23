@@ -54,7 +54,7 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     throw new Error("Must project at least 1 year");
 
   if (yearsOfService < minimumServiceYear)
-    throw new Error('Must serve at least ${minimumServiceYear} years to receive pension');
+    throw new Error(`Must serve at least ${minimumServiceYear} years to receive pension for chosen retirement type`);
 
   let pensionReduction = 0;
   if (retirementType === 'mra10' || retirementType === 'deferred') {
