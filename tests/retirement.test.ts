@@ -95,22 +95,6 @@ describe('Retirement Savings Projection', () => {
       expect(last.endingBalance).toBeLessThan(200_000);
       expect(last.endingBalance).toBeGreaterThanOrEqual(0);
     });
-
-    it('should return empty array if yearsToProject <= 0', () => {
-      const result = calculateRetirementSavingsProjection({
-        startYear: 2025,
-        birthYear: 1980,
-        initialBalance: 100_000,
-        initialContribution: 10_000,
-        estimatedYield: 5,
-        estimatedWithdrawRate: 0,
-        contributionIncreaseRate: 0,
-        withdrawStartAge: 65,
-        yearsToProject: 0,
-      });
-
-      expect(result).toHaveLength(0);
-    });
   });
   describe('Negative value inputs', () => {
     it('should treat negative initial balance as zero', () => {
@@ -196,6 +180,19 @@ describe('Retirement Savings Projection', () => {
       expect(result[1].contribution).toBeLessThan(10_000);
       expect(result[2].contribution).toBeLessThan(result[1].contribution);
     });
+    it('throws if yearsToProject is zero or negative', () => {
+      expect(() => calculateRetirementSavingsProjection({
+        startYear: 2025,
+        birthYear: 1980,
+        initialBalance: 100_000,
+        initialContribution: 10_000,
+        estimatedYield: 5,
+        estimatedWithdrawRate: 0,
+        contributionIncreaseRate: 0,
+        withdrawStartAge: 65,
+        yearsToProject: 0,
+      })).toThrow();
+    });
   });
   describe('Timeline edge cases', () => {
     it('should start withdrawals immediately if withdrawStartAge <= current age', () => {
@@ -252,6 +249,4 @@ describe('Retirement Savings Projection', () => {
       }
     });
   });
-
-
 });

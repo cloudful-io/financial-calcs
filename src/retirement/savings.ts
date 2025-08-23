@@ -33,9 +33,13 @@ export function calculateRetirementSavingsProjection(
     withdrawStartAge, yearsToProject
   } = input;
 
+  if (yearsToProject <= 0 )
+    throw new Error("Must project at least 1 year");
+  
   if (estimatedWithdrawRate < 0) {
     throw new Error("Withdrawal rate cannot be negative");
   }
+
   // Treat negative balance as 0
   let balance = initialBalance < 0 ? 0 : initialBalance;
 

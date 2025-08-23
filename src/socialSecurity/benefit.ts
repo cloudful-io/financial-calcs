@@ -22,6 +22,9 @@ export function calculateSocialSecurityBenefitProjection(
 ): SocialSecurityBenefitProjectionRow[] {
   const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
 
+  if (yearsToProject <= 0 )
+    throw new Error("Must project at least 1 year");
+  
   const fullRetirementAge = getFullRetirementAge(birthYear);
   const claimingYear = birthYear + claimingAge;
 

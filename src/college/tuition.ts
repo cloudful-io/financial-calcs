@@ -42,6 +42,9 @@ export function calculateCollegeTuitionProjection(
     yearsToProject,
   } = input;
 
+  if (yearsToProject <= 0 )
+    throw new Error("Must project at least 1 year");
+  
   let balance = initialBalance;
   const data: CollegeTuitionProjectionRow[] = [];
 
