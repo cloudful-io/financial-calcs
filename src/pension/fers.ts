@@ -53,6 +53,9 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
   if (yearsToProject <= 0 )
     throw new Error("Must project at least 1 year");
 
+  if (minimumServiceYear == 0)
+    throw new Error("Not eligible to retire with pension")
+
   if (yearsOfService < minimumServiceYear)
     throw new Error(`Must serve at least ${minimumServiceYear} years to receive pension for chosen retirement type`);
 
@@ -105,7 +108,6 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
 function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred'): number {
 
   const mra = getMRA(birthYear);
-  const INELIGIBLE = 1000;
 
   if ( retirementType === 'regular') {
     if (retirementAge >= 62)
@@ -116,13 +118,14 @@ function getMinimumServiceYear(birthYear: number, retirementAge: number, retirem
       return 30;
     // Not eligible
     else
-      return INELIGIBLE;
+      return 0;
   }
   else if (retirementType === 'mra10') {
     if (retirementAge >= mra)
       return 10;
+    // Not eligible
     else
-      return INELIGIBLE;
+      return 0;
   }
   else if (retirementType === 'early') {
     if (retirementAge >= 50) 
@@ -135,11 +138,12 @@ function getMinimumServiceYear(birthYear: number, retirementAge: number, retirem
       return 5;
     else if (retirementAge >= mra) 
       return 10;
+    // Not eligible
     else
-      return INELIGIBLE;  
+      return 0;  
   }
   // Unreachable code
-  return INELIGIBLE;
+  return 0;
 }
 
 function getMRA(birthYear: number): number {
