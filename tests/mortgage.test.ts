@@ -91,4 +91,50 @@ describe('Mortgage Amortization', () => {
       expect(result[result.length - 1].balance).toBeCloseTo(0, 2);
     });
   });
+  describe('Boundary and edge cases', () => {
+    it('should handle zero loan amount', () => {
+      expect(() => calculateMortgageAmortization({
+        loanAmount: 0,
+        annualRate: 5,
+        termYears: 15,
+        startDate: new Date(2025, 0, 1),
+       })).toThrow();
+    });
+    it('should handle negative interest rate', () => {
+      expect(() => calculateMortgageAmortization({
+        loanAmount: 100_000,
+        annualRate: -5,
+        termYears: 15,
+        startDate: new Date(2025, 0, 1),
+       })).toThrow();
+    });
+    it('should handle zero term years', () => {
+      expect(() => calculateMortgageAmortization({
+        loanAmount: 100_000,
+        annualRate: 5,
+        termYears: 0,
+        startDate: new Date(2025, 0, 1),
+       })).toThrow();
+    });
+    it('should handle negative extra payment', () => {
+      expect(() => calculateMortgageAmortization({
+        loanAmount: 100_000,
+        annualRate: 5,
+        termYears: 30,
+        startDate: new Date(2025, 0, 1),
+        extraPayment: -100,
+       })).toThrow();
+    });
+    it('should pay off loan immediately if extra payment exceeds balance', () => {
+      const result = calculateMortgageAmortization({
+        loanAmount: 1000,
+        annualRate: 5,
+        termYears: 1,
+        startDate: new Date(2025, 0, 1),
+        extraPayment: 2000,
+      });
+      expect(result.length).toBe(1);
+      expect(result[0].balance).toBeCloseTo(0, 2);
+    });
+  });
 });
