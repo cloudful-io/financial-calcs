@@ -38,6 +38,18 @@ export function calculateMortgageAmortization(
     extraPayment = 0,
   } = input;
 
+  if (loanAmount <= 0 )
+    throw new Error("Loan amount must be greater than 0");
+
+  if (annualRate < 0 )
+    throw new Error("Annual interest rate cannot be negative");
+
+  if (termYears <= 0 )
+    throw new Error("Loan term must be greater than 0");
+
+  if (extraPayment < 0 )
+    throw new Error("Extra payment cannot be negative");
+
   const monthlyRate = annualRate / 100 / 12;
   const totalMonths = termYears * 12;
 
