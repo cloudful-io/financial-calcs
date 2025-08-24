@@ -24,7 +24,14 @@ export function calculateSocialSecurityBenefitProjection(
 
   if (yearsToProject <= 0 )
     throw new Error("Must project at least 1 year");
-  
+
+  if (claimingAge < 62 )
+    throw new Error("Must be at least 62 to claim social security benefits");
+
+  if (averageCOLA < 0) {
+    throw new Error("Average COLA cannot be negative");
+  }
+
   const fullRetirementAge = getFullRetirementAge(birthYear);
   const claimingYear = birthYear + claimingAge;
 
@@ -67,8 +74,12 @@ export function calculateSocialSecurityBenefitProjection(
 function estimatePIA(averageIncome: number): number {
   const bendPoint1 = 1226;
   const bendPoint2 = 7391;
+  const taxableMax = 176100; // 2025 SSA maximum taxable earnings
 
-  const monthlyIncome = averageIncome / 12;
+  // Cap at taxable maximum
+  const cappedIncome = Math.min(averageIncome, taxableMax);
+  const monthlyIncome = cappedIncome / 12;
+
   let pia = 0;
 
   if (monthlyIncome <= bendPoint1) {

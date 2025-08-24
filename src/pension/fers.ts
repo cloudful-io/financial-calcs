@@ -57,12 +57,14 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     throw new Error("Not eligible to retire with pension")
 
   if (yearsOfService < minimumServiceYear)
-    throw new Error(`Must serve at least ${minimumServiceYear} years to receive pension for chosen retirement type`);
+    throw new Error(`Must serve at least ${minimumServiceYear} years to receive pension for selected retirement type`);
 
   let pensionReduction = 0;
   if (retirementType === 'mra10' || retirementType === 'deferred') {
     const yearsUnder62 = Math.max(0, 62 - retirementAge);
-    pensionReduction = 5 * yearsUnder62;
+
+    if (yearsOfService < 30)
+      pensionReduction = 5 * yearsUnder62;
   }
 
   let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
