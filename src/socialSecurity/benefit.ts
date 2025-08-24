@@ -36,7 +36,7 @@ export function calculateSocialSecurityBenefitProjection(
   const claimingYear = birthYear + claimingAge;
 
   // Estimate monthly PIA (Primary Insurance Amount)
-  const estimatedPIA = estimatePIA(averageIncome);
+  const estimatedPIA = estimatePIAWithAIME([averageIncome]);
 
   // Adjust for early/late claiming
   const reductionOrIncreaseFactor = calculateAdjustmentFactor(claimingAge, fullRetirementAge);
@@ -95,6 +95,41 @@ function estimatePIA(averageIncome: number): number {
 
   return pia;
 }
+
+function estimatePIAWithAIME(
+  earnings: number[], // array of up to 35 years of indexed annual earnings
+  bendPoint1 = 1226,
+  bendPoint2 = 7391
+): number {
+  // Take highest 35 years
+  const topEarnings = earnings
+    .sort((a, b) => b - a)
+    .slice(0, 35);
+
+  const totalIndexedEarnings = topEarnings.reduce((sum, yr) => sum + yr, 0);
+
+  // AIME = total / 420 months
+  const aime = Math.floor(totalIndexedEarnings / 420);
+
+  // Apply bend points
+  let pia = 0;
+  if (aime <= bendPoint1) {
+    pia = aime * 0.9;
+  } else if (aime <= bendPoint2) {
+    pia = bendPoint1 * 0.9 + (aime - bendPoint1) * 0.32;
+  } else {
+    pia =
+      bendPoint1 * 0.9 +
+      (bendPoint2 - bendPoint1) * 0.32 +
+      (aime - bendPoint2) * 0.15;
+  }
+
+  // SSA truncates to nearest dime
+  pia = Math.floor(pia * 10) / 10;
+
+  return pia;
+}
+
 
 // Adjustment for early/late claiming relative to FRA
 function calculateAdjustmentFactor(claimingAge: number, fra: number): number {
