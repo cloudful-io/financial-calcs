@@ -36,7 +36,8 @@ export function calculateSocialSecurityBenefitProjection(
   const claimingYear = birthYear + claimingAge;
 
   // Estimate monthly PIA (Primary Insurance Amount)
-  const estimatedPIA = estimatePIAWithAIME([averageIncome]);
+  // TODO: Refine to use updated estimatePIAWithAIME (but need to pass in an array of incomes)
+  const estimatedPIA = estimatePIA(averageIncome);
 
   // Adjust for early/late claiming
   const reductionOrIncreaseFactor = calculateAdjustmentFactor(claimingAge, fullRetirementAge);
