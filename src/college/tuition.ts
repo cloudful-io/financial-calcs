@@ -42,8 +42,23 @@ export function calculateCollegeTuitionProjection(
     yearsToProject,
   } = input;
 
-  if (yearsToProject <= 0 )
+  if (yearsToProject <= 0)
     throw new Error("Must project at least 1 year");
+
+  if (childBirthYear <= birthYear)
+    throw new Error("Child cannot be older than parent");
+
+  if (childCollegeFirstYear <= childBirthYear)
+    throw new Error("Child's first year of college must be later than child's birth year");
+
+  if (childCollegeLastYear < childCollegeFirstYear)
+    throw new Error("Child's last year of college must be later than child's first year of college");
+
+  if (initialBalance <= 0 )
+    throw new Error("Initial balance must be greater than zero");
+
+  if (estimatedFirstYearTuition <= 0 )
+    throw new Error("Estimated first year of tuition must be greater than zero");
   
   let balance = initialBalance;
   const data: CollegeTuitionProjectionRow[] = [];
