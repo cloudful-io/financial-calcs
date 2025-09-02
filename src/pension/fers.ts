@@ -91,23 +91,26 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     const row: FersPensionProjectionRow = { year, age, salaryGrowthRate: 0, colaApplied: 0 };
 
     // Working Age
-    if (year < retirementYear || (retirementType === 'deferred' && year <= serviceEndYear)) {
-      const salary = salaries[year - startYear];
-    
-      if (salary !== undefined) {
-        row.salary = salary;
+    if (year < retirementYear) {
+      // Deferred retirement type: passed service end year and not at retirement age yet
+      if (retirementType === 'deferred' && year > serviceEndYear && year < retirementYear)
+      {
+        row.salary = 0;
+        row.salaryGrowthRate = 0;
+        row.pension = 0;
+        row.monthlyPension = 0;
       }
-      row.salaryGrowthRate = salaryGrowthRate;
-      row.pension = 0;
-      row.monthlyPension = 0;
-    }
-    // Deferred retirement type: passed service end year and not at retirement age yet
-    else if (retirementType === 'deferred' && year > serviceEndYear && year < retirementYear)
-    {
-      row.salary = 0;
-      row.salaryGrowthRate = 0;
-      row.pension = 0;
-      row.monthlyPension = 0;
+      else
+      {
+        const salary = salaries[year - startYear];
+      
+        if (salary !== undefined) {
+          row.salary = salary;
+        }
+        row.salaryGrowthRate = salaryGrowthRate;
+        row.pension = 0;
+        row.monthlyPension = 0;
+      }
     }
     // Retirement Age 
     else {
