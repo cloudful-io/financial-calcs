@@ -2,6 +2,7 @@ export interface FersPensionInput {
   startYear: number;
   birthYear: number;
   serviceStartYear: number;
+  serviceEndYear: number;
   retirementAge: number;
   currentSalary: number;
   salaryGrowthRate: number;
@@ -23,7 +24,7 @@ export interface FersPensionProjectionRow {
 
 export function calculateFersPensionProjection(input: FersPensionInput): FersPensionProjectionRow[] {
   const {
-    startYear, birthYear, serviceStartYear, retirementAge,
+    startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
     currentSalary, salaryGrowthRate, colaPercent,
     pensionMultiplier, yearsToProject, retirementType
   } = input;
@@ -47,7 +48,12 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     salaries.push(currentSalary);
 
   const high3 = salaries.slice(-3).reduce((sum, s) => sum + s, 0) / Math.min(3, salaries.length);
-  const yearsOfService = retirementAge - (serviceStartYear - birthYear);
+
+  let yearsOfService = retirementAge - (serviceStartYear - birthYear);
+
+  if (retirementType === "deferred")
+    yearsOfService = serviceEndYear - serviceStartYear;
+
   const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
 
   if (yearsToProject <= 0 )
@@ -64,7 +70,13 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     const yearsUnder62 = Math.max(0, 62 - retirementAge);
 
     if (yearsOfService < 30)
-      pensionReduction = 5 * yearsUnder62;
+    {
+      // Special Case: no deduction for deferred retirement if retiring at 60 or older with 20 years of service or more
+      if (retirementType === 'deferred' && yearsOfService >= 20 && retirementAge >= 60)
+        pensionReduction = 0;
+      else  
+        pensionReduction = 5 * yearsUnder62;
+    }
   }
 
   let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
