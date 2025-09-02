@@ -6,6 +6,7 @@ export interface FersPensionInput {
   retirementAge: number;
   currentSalary: number;
   salaryGrowthRate: number;
+  high3Salary: number;  // only used for deferred retirement type
   colaPercent: number;
   pensionMultiplier: number;
   yearsToProject: number;
@@ -25,7 +26,7 @@ export interface FersPensionProjectionRow {
 export function calculateFersPensionProjection(input: FersPensionInput): FersPensionProjectionRow[] {
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
-    currentSalary, salaryGrowthRate, colaPercent,
+    currentSalary, salaryGrowthRate, high3Salary, colaPercent,
     pensionMultiplier, yearsToProject, retirementType
   } = input;
 
@@ -47,8 +48,11 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
   if (startYear >= retirementYear)
     salaries.push(currentSalary);
 
-  const high3 = salaries.slice(-3).reduce((sum, s) => sum + s, 0) / Math.min(3, salaries.length);
-
+  let high3 = salaries.slice(-3).reduce((sum, s) => sum + s, 0) / Math.min(3, salaries.length);
+   
+  if (retirementType === 'deferred')
+    high3 = high3Salary;
+  
   let yearsOfService = retirementAge - (serviceStartYear - birthYear);
 
   if (retirementType === "deferred")
