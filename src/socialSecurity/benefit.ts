@@ -21,7 +21,7 @@ export interface SocialSecurityValidationError {
   message: string;
 }
 
-export function validateSocialSecurityInput(
+export function validateSocialSecurityBenefitInput(
   input: SocialSecurityBenefitInput
 ): SocialSecurityValidationError[] {
   const errors: SocialSecurityValidationError[] = [];
@@ -43,7 +43,7 @@ export function calculateSocialSecurityBenefitProjection(
 ): SocialSecurityBenefitProjectionRow[] {
   const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
 
-  const errors = validateSocialSecurityInput(input);
+  const errors = validateSocialSecurityBenefitInput(input);
     
   if (errors.length > 0) {
     const err = new Error("Social Security Benefits input validation failed");
