@@ -23,6 +23,40 @@ export interface RetirementSavingsProjectionRow {
   endingBalance: number;
 }
 
+export interface RetirementSavingsValidationError {
+  field: keyof RetirementSavingsInput;
+  message: string;
+}
+
+export function validateRetirementSavingsInput(
+  input: RetirementSavingsInput
+): RetirementSavingsValidationError[] {
+  const errors: RetirementSavingsValidationError[] = [];
+  const {
+    startYear,
+    birthYear,
+    initialBalance,
+    initialContribution,
+    estimatedYield,
+    estimatedWithdrawRate,
+    contributionIncreaseRate,
+    withdrawStartAge,
+    yearsToProject,
+  } = input;
+
+  if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
+  if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
+  if (initialBalance < 0) errors.push({ field: "initialBalance", message: "Initial balance cannot be negative" });
+  if (initialContribution < 0) errors.push({ field: "initialContribution", message: "Contribution cannot be negative" });
+  if (estimatedYield < -100) errors.push({ field: "estimatedYield", message: "Estimated yield cannot be less than -100%" });
+  if (estimatedWithdrawRate < 0) errors.push({ field: "estimatedWithdrawRate", message: "Withdrawal rate cannot be negative" });
+  if (contributionIncreaseRate < -100) errors.push({ field: "contributionIncreaseRate", message: "Contribution increase rate cannot be less than -100%" });
+  if (withdrawStartAge < 0 || withdrawStartAge > 80) errors.push({ field: "withdrawStartAge", message: "Withdraw start age must be between 0 and 80" });
+  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+
+  return errors;
+}
+
 // --- Pure calculation function ---
 export function calculateRetirementSavingsProjection(
   input: RetirementSavingsInput
@@ -33,11 +67,12 @@ export function calculateRetirementSavingsProjection(
     withdrawStartAge, yearsToProject
   } = input;
 
-  if (yearsToProject <= 0 )
-    throw new Error("Must project at least 1 year");
+  const errors = validateRetirementSavingsInput(input);
   
-  if (estimatedWithdrawRate < 0) {
-    throw new Error("Withdrawal rate cannot be negative");
+  if (errors.length > 0) {
+    const err = new Error("Retirement Savings input validation failed");
+    (err as any).validationErrors = errors;
+    throw err;
   }
 
   // Treat negative balance as 0

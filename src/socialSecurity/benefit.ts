@@ -16,20 +16,39 @@ export interface SocialSecurityBenefitProjectionRow {
   monthlyBenefit: number;
 }
 
+export interface SocialSecurityValidationError {
+  field: keyof SocialSecurityBenefitInput;
+  message: string;
+}
+
+export function validateSocialSecurityInput(
+  input: SocialSecurityBenefitInput
+): SocialSecurityValidationError[] {
+  const errors: SocialSecurityValidationError[] = [];
+  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
+
+  if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
+  if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
+  if (claimingAge < 62) errors.push({ field: "claimingAge", message: "Must be at least 62 to claim Social Security benefits" });
+  if (averageIncome <= 0) errors.push({ field: "averageIncome", message: "Average income cannot be negative" });
+  if (averageCOLA < 0) errors.push({ field: "averageCOLA", message: "Average COLA cannot be negative" });
+  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+
+  return errors;
+}
+
 // --- Pure calculation function ---
 export function calculateSocialSecurityBenefitProjection(
   input: SocialSecurityBenefitInput
 ): SocialSecurityBenefitProjectionRow[] {
   const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
 
-  if (yearsToProject <= 0 )
-    throw new Error("Must project at least 1 year");
-
-  if (claimingAge < 62 )
-    throw new Error("Must be at least 62 to claim social security benefits");
-
-  if (averageCOLA < 0) {
-    throw new Error("Average COLA cannot be negative");
+  const errors = validateSocialSecurityInput(input);
+    
+  if (errors.length > 0) {
+    const err = new Error("Social Security Benefits input validation failed");
+    (err as any).validationErrors = errors;
+    throw err;
   }
 
   const fullRetirementAge = getFullRetirementAge(birthYear);

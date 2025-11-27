@@ -26,6 +26,26 @@ export interface YearlyAmortizationRow {
   balance: number;
 }
 
+export interface MortgageValidationError {
+  field: keyof MortgageAmortizationInput;
+  message: string;
+}
+
+export function validateMortgageInput(
+  input: MortgageAmortizationInput
+): MortgageValidationError[] {
+  const errors: MortgageValidationError[] = [];
+
+  const { loanAmount, annualRate, termYears, extraPayment } = input;
+
+  if (loanAmount <= 0) errors.push({ field: "loanAmount", message: "Loan amount must be greater than 0" });
+  if (annualRate < 0) errors.push({ field: "annualRate", message: "Annual interest rate cannot be negative" });
+  if (termYears <= 0) errors.push({ field: "termYears", message: "Loan term must be greater than 0" });
+  if (extraPayment !== undefined && extraPayment < 0) errors.push({ field: "extraPayment", message: "Extra payment cannot be negative" });
+
+  return errors;
+}
+
 // --- Pure calculation: monthly amortization ---
 export function calculateMortgageAmortization(
   input: MortgageAmortizationInput
@@ -38,17 +58,13 @@ export function calculateMortgageAmortization(
     extraPayment = 0,
   } = input;
 
-  if (loanAmount <= 0 )
-    throw new Error("Loan amount must be greater than 0");
-
-  if (annualRate < 0 )
-    throw new Error("Annual interest rate cannot be negative");
-
-  if (termYears <= 0 )
-    throw new Error("Loan term must be greater than 0");
-
-  if (extraPayment < 0 )
-    throw new Error("Extra payment cannot be negative");
+  const errors = validateMortgageInput(input);
+        
+  if (errors.length > 0) {
+    const err = new Error("Mortgage Amortization input validation failed");
+    (err as any).validationErrors = errors;
+    throw err;
+  }
 
   const monthlyRate = annualRate / 100 / 12;
   const totalMonths = termYears * 12;

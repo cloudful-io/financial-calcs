@@ -23,13 +23,13 @@ export interface FersPensionProjectionRow {
   colaApplied: number;
 }
 
-export interface ValidationError {
+export interface FersPensionValidationError {
   field: keyof FersPensionInput;
   message: string;
 }
 
-export function validateFersPensionInput(input: FersPensionInput): ValidationError[] {
-  const errors: ValidationError[] = [];
+export function validateFersPensionInput(input: FersPensionInput): FersPensionValidationError[] {
+  const errors: FersPensionValidationError[] = [];
 
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
@@ -37,52 +37,24 @@ export function validateFersPensionInput(input: FersPensionInput): ValidationErr
     high3Salary, yearsToProject, retirementType
   } = input;
 
-  const retirementYear = birthYear + retirementAge;
   const serviceStartAge = serviceStartYear - birthYear;
 
-  if (startYear < 1900) {
-    errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
-  }
-
-  if (birthYear < 1900) {
-    errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
-  }
-
-  if (serviceStartYear < 1900) {
-    errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be before 1900" });
-  }
-
-  if (serviceEndYear < 1900) {
-    errors.push({ field: "serviceEndYear", message: "Service End Year cannot be before 1900" });
-  }
-
-  if (retirementAge < 40 || retirementAge > 80) {
-    errors.push({ field: "retirementAge", message: "Retirement Age must be between 40 and 80" });
-  }
-
-  if (yearsToProject <= 0) {
-    errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
-  }
-
-  if (currentSalary <= 0) {
-    errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
-  }
-
-  if (salaryGrowthRate < -100) {
-    errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
-  }
+  if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
+  if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
+  if (serviceStartYear < 1900) errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be before 1900" });
+  if (serviceEndYear < 1900) errors.push({ field: "serviceEndYear", message: "Service End Year cannot be before 1900" });
+  if (retirementAge < 40 || retirementAge > 80) errors.push({ field: "retirementAge", message: "Retirement Age must be between 40 and 80" });
+  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  if (currentSalary <= 0) errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
+  if (salaryGrowthRate < -100) errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
 
   //  Assume person cannot start federal job until 16
-  if (serviceStartAge < 16) {
-    errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
-  }
+  if (serviceStartAge < 16) errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
 
   const yearsOfService = retirementAge - (serviceStartYear - birthYear);
   const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
 
-  if (minimumServiceYear === 0) {
-    errors.push({ field: "retirementType", message: "Not eligible to retire with pension" });
-  }
+  if (minimumServiceYear === 0) errors.push({ field: "retirementType", message: "Not eligible to retire with pension" });
 
   if (yearsOfService < minimumServiceYear) {
     errors.push({
@@ -115,7 +87,6 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
 
   const retirementYear = birthYear + retirementAge;
   const endYear = startYear + yearsToProject;
-  //const serviceStartAge = serviceStartYear - birthYear;
 
   const salaries: number[] = [];
   let salary = currentSalary;
