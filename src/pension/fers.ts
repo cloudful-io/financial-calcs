@@ -23,6 +23,81 @@ export interface FersPensionProjectionRow {
   colaApplied: number;
 }
 
+export interface ValidationError {
+  field: keyof FersPensionInput;
+  message: string;
+}
+
+export function validateFersPensionInput(input: FersPensionInput): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  const {
+    startYear, birthYear, serviceStartYear, serviceEndYear,
+    retirementAge, currentSalary, salaryGrowthRate,
+    high3Salary, yearsToProject, retirementType
+  } = input;
+
+  const retirementYear = birthYear + retirementAge;
+  const serviceStartAge = serviceStartYear - birthYear;
+
+  if (startYear < 1900) {
+    errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
+  }
+
+  if (birthYear < 1900) {
+    errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
+  }
+
+  if (serviceStartYear < 1900) {
+    errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be before 1900" });
+  }
+
+  if (serviceEndYear < 1900) {
+    errors.push({ field: "serviceEndYear", message: "Service End Year cannot be before 1900" });
+  }
+
+  if (retirementAge < 40 || retirementAge > 80) {
+    errors.push({ field: "retirementAge", message: "Retirement Age must be between 40 and 80" });
+  }
+
+  if (yearsToProject <= 0) {
+    errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  }
+
+  if (currentSalary <= 0) {
+    errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
+  }
+
+  if (salaryGrowthRate < -100) {
+    errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
+  }
+
+  //  Assume person cannot start federal job until 16
+  if (serviceStartAge < 16) {
+    errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
+  }
+
+  const yearsOfService = retirementAge - (serviceStartYear - birthYear);
+  const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
+
+  if (minimumServiceYear === 0) {
+    errors.push({ field: "retirementType", message: "Not eligible to retire with pension" });
+  }
+
+  if (yearsOfService < minimumServiceYear) {
+    errors.push({
+      field: "serviceStartYear",
+      message: `Must serve at least ${minimumServiceYear} years for ${retirementType} retirement`,
+    });
+  }
+
+  if (retirementType === "deferred" && high3Salary <= 0) {
+    errors.push({ field: "high3Salary", message: "High-3 salary must be provided for deferred retirement" });
+  }
+
+  return errors;
+}
+
 export function calculateFersPensionProjection(input: FersPensionInput): FersPensionProjectionRow[] {
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
@@ -30,13 +105,15 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     pensionMultiplier, yearsToProject, retirementType
   } = input;
 
+  const errors = validateFersPensionInput(input);
+
+  if (errors.length > 0) {
+    return [];
+  }
+
   const retirementYear = birthYear + retirementAge;
   const endYear = startYear + yearsToProject;
-  const serviceStartAge = serviceStartYear - birthYear;
-
-  //  Assume person cannot start federal job until 16
-  if (serviceStartAge < 16)
-    throw new Error("Must be 16 to start federal job")
+  //const serviceStartAge = serviceStartYear - birthYear;
 
   const salaries: number[] = [];
   let salary = currentSalary;
@@ -59,15 +136,6 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
     yearsOfService = serviceEndYear - serviceStartYear;
 
   const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
-
-  if (yearsToProject <= 0 )
-    throw new Error("Must project at least 1 year");
-
-  if (minimumServiceYear == 0)
-    throw new Error("Not eligible to retire with pension")
-
-  if (yearsOfService < minimumServiceYear)
-    throw new Error(`Must serve at least ${minimumServiceYear} years to receive pension for selected retirement type`);
 
   let pensionReduction = 0;
   if (retirementType === 'mra10' || retirementType === 'deferred') {
