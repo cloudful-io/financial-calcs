@@ -108,7 +108,9 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
   const errors = validateFersPensionInput(input);
 
   if (errors.length > 0) {
-    return [];
+    const err = new Error("FERS pension input validation failed");
+    (err as any).validationErrors = errors;
+    throw err;
   }
 
   const retirementYear = birthYear + retirementAge;
