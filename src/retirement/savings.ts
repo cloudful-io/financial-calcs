@@ -4,11 +4,21 @@ export interface RetirementSavingsInput {
   birthYear: number;
   initialBalance: number;
   initialContribution: number;
-  estimatedYield: number;            // percent per year
-  estimatedWithdrawRate: number;     // percent of balance per year
-  contributionIncreaseRate: number;  // percent per year
+  estimatedYield: number;            
+  estimatedWithdrawRate: number;     
+  contributionIncreaseRate: number;  
   withdrawStartAge: number;
   yearsToProject: number;
+  yearOverrides?: RetirementSavingsYearOverrides;
+}
+
+export type RetirementSavingsYearOverrides = Record<number, RetirementSavingsOverride>;
+
+export interface RetirementSavingsOverride {
+  contribution?: number;
+  yieldRate?: number;
+  withdrawRate?: number;
+  withdrawAmount?: number;
 }
 
 export interface RetirementSavingsProjectionRow {

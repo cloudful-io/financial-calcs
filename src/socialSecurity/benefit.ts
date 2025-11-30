@@ -3,9 +3,16 @@ export interface SocialSecurityBenefitInput {
   startYear: number;
   birthYear: number;
   claimingAge: number;
-  averageIncome: number;   // Average indexed monthly earnings (approximation)
-  averageCOLA: number;     // % per year
+  averageIncome: number;   
+  averageCOLA: number;     
   yearsToProject: number;
+  yearOverrides?: SocialSecurityBenefitYearOverrides;
+}
+
+export type SocialSecurityBenefitYearOverrides = Record<number, SocialSecurityBenefitOverride>;
+
+export interface SocialSecurityBenefitOverride {
+  colaPercent?: number;
 }
 
 export interface SocialSecurityBenefitProjectionRow {

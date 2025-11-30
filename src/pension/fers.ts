@@ -11,6 +11,15 @@ export interface FersPensionInput {
   pensionMultiplier: number;
   yearsToProject: number;
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
+  yearOverrides?: FersPensionYearOverrides;
+}
+
+export type FersPensionYearOverrides = Record<number, FersPensionOverride>;
+
+export interface FersPensionOverride {
+  salary?: number; 
+  salaryGrowthRate?: number;        
+  colaPercent?: number;    
 }
 
 export interface FersPensionProjectionRow {
