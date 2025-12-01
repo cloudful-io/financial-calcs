@@ -19,7 +19,7 @@ export type FersPensionYearOverrides = Record<number, FersPensionOverride>;
 export interface FersPensionOverride {
   salary?: number; 
   salaryGrowthRate?: number;        
-  colaPercent?: number;    
+  colaApplied?: number;    
 }
 
 export interface FersPensionProjectionRow {
@@ -319,7 +319,7 @@ export function calculateFersPensionProjectionWithOverrides(
       // AFTER RETIREMENT
       row.salary = 0;
 
-      let cola = override.colaPercent ?? defaultCola;
+      let cola = override.colaApplied ?? defaultCola;
 
       if (age >= 63 && year > retirementYear) {
         pension *= 1 + cola / 100;
