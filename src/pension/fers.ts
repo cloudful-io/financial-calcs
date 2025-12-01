@@ -184,6 +184,160 @@ export function calculateFersPensionProjection(input: FersPensionInput): FersPen
   return data;
 }
 
+export function calculateFersPensionProjectionWithOverrides(
+  input: FersPensionInput
+): FersPensionProjectionRow[] {
+  const {
+    startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
+    currentSalary, salaryGrowthRate: defaultGrowthRate, high3Salary,
+    colaPercent: defaultCola, pensionMultiplier, yearsToProject,
+    retirementType, yearOverrides = {}
+  } = input;
+
+  const errors = validateFersPensionInput(input);
+  if (errors.length > 0) {
+    const err = new Error("FERS pension input validation failed");
+    (err as any).validationErrors = errors;
+    throw err;
+  }
+
+  const retirementYear = birthYear + retirementAge;
+  const endYear = startYear + yearsToProject;
+
+  const rows: FersPensionProjectionRow[] = [];
+
+  // --- BUILD SALARY HISTORY WITH OVERRIDES ---
+  const salaryMap: Record<number, number> = {};
+  let prevSalary = currentSalary;
+
+  for (let year = startYear; year < retirementYear; year++) {
+    const override = yearOverrides[year] || {};
+
+    let finalSalary = prevSalary;
+
+    if (override.salary !== undefined) {
+      // Rule 1: explicit salary override
+      finalSalary = override.salary;
+    } else if (override.salaryGrowthRate !== undefined) {
+      // Rule 2: overridden growth rate
+      finalSalary = prevSalary * (1 + override.salaryGrowthRate / 100);
+    } else {
+      // Rule 3: default growth rate
+      finalSalary = prevSalary * (1 + defaultGrowthRate / 100);
+    }
+
+    salaryMap[year] = finalSalary;
+    prevSalary = finalSalary;
+  }
+
+  // If already retired at projection start, preserve current salary for high-3 math
+  if (startYear >= retirementYear) {
+    salaryMap[startYear] = currentSalary;
+  }
+
+  let lastYears = Object.keys(salaryMap)
+    .map(y => salaryMap[Number(y)])
+    .slice(-3);
+
+  const validYears = (lastYears ?? []).filter(
+    (n): n is number => n !== undefined
+  );
+
+  const total = validYears.reduce((a, b) => a + b, 0);
+
+  let high3 =
+    validYears.length > 0
+      ? total / Math.min(3, validYears.length)
+      : 0;
+
+  if (retirementType === 'deferred') {
+    high3 = high3Salary;
+  }
+
+  // --- YEARS OF SERVICE ---
+  let yearsOfService = retirementAge - (serviceStartYear - birthYear);
+  if (retirementType === "deferred") {
+    yearsOfService = serviceEndYear - serviceStartYear;
+  }
+
+  // --- REDUCTIONS ---
+  const msy = getMinimumServiceYear(birthYear, retirementAge, retirementType);
+  let pensionReduction = 0;
+
+  if (retirementType === 'mra10' || retirementType === 'deferred') {
+    const under62 = Math.max(0, 62 - retirementAge);
+
+    if (yearsOfService < 30) {
+      if (retirementType === 'deferred' && yearsOfService >= 20 && retirementAge >= 60) {
+        pensionReduction = 0;
+      } else {
+        pensionReduction = 5 * under62;
+      }
+    }
+  }
+
+  // --- BASE PENSION AT RETIREMENT ---
+  let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
+
+  // --- FINAL ROW GENERATION ---
+  for (let year = startYear; year < endYear; year++) {
+    const age = year - birthYear;
+    const override = yearOverrides[year] || {};
+
+    const row: FersPensionProjectionRow = {
+      year,
+      age,
+      salaryGrowthRate: 0,
+      colaApplied: 0,
+      salary: 0,
+      pension: 0,
+      monthlyPension: 0,
+    };
+
+    if (year < retirementYear) {
+      // BEFORE RETIREMENT
+      if (retirementType === 'deferred' && year > serviceEndYear) {
+        // No salary during waiting years
+        row.salary = 0;
+        row.salaryGrowthRate = 0;
+      } else {
+        const salary = salaryMap[year];
+        row.salary = salary!;
+
+        if (override.salary !== undefined) {
+          row.salaryGrowthRate = 0;
+        } else if (override.salaryGrowthRate !== undefined) {
+          row.salaryGrowthRate = override.salaryGrowthRate;
+        } else {
+          row.salaryGrowthRate = defaultGrowthRate;
+        }
+      }
+
+      row.pension = 0;
+      row.monthlyPension = 0;
+    } else {
+      // AFTER RETIREMENT
+      row.salary = 0;
+
+      let cola = override.colaPercent ?? defaultCola;
+
+      if (age >= 63 && year > retirementYear) {
+        pension *= 1 + cola / 100;
+        row.colaApplied = cola;
+      }
+
+      if (retirementType === 'deferred' && age < 62) {
+        row.colaApplied = 0; // no COLA yet
+      }
+
+      row.pension = pension;
+      row.monthlyPension = pension / 12;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred'): number {
 
   const mra = getMRA(birthYear);
