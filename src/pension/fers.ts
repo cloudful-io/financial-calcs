@@ -131,6 +131,7 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
       row.salary = 0;
       let cola = override.colaApplied ?? defaultCola;
       if (age >= 63 && year > retirementYear) pension *= 1 + cola / 100;
+      else cola = 0;
       if (retirementType === 'deferred' && age < 62) cola = 0;
       row.colaApplied = cola;
       row.pension = pension;
