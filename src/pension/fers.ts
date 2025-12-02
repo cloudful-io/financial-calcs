@@ -122,8 +122,8 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
         row.salary = salaryMap[year] ?? 0;
         const nextSalary = salaryMap[year + 1];
 
-        const isLastYear = year === retirementYear - 1;
-        row.salaryGrowthRate = calculateSalaryGrowthRate(row.salary!, nextSalary, override.salary, override.salaryGrowthRate, input.salaryGrowthRate, isLastYear);
+        //  Round to 2 decimals
+        row.salaryGrowthRate = Math.round(calculateSalaryGrowthRate(row.salary!, nextSalary, override.salaryGrowthRate, input.salaryGrowthRate)*100)/100;
       }
     } 
     // After retirement
@@ -200,28 +200,13 @@ function calculatePensionReduction(input: FersPensionInput, yearsOfService: numb
 function calculateSalaryGrowthRate(
   currentSalary: number,
   nextSalary: number | undefined,
-  overrideSalary?: number,
   overrideGrowth?: number,
-  defaultGrowth?: number,
-  isLastYear: boolean = false
+  defaultGrowth?: number
 ): number {
-  if (!isLastYear) {
-    if (overrideSalary !== undefined) {
-      // Calculate TRUE growth from next year's salary
-      if (nextSalary !== undefined && currentSalary !== 0) {
-        return ((nextSalary - currentSalary) / currentSalary) * 100;
-      } else {
-        return 0; // fallback
-      }
-    } else if (overrideGrowth !== undefined) {
-      return overrideGrowth;
-    } else {
-      return defaultGrowth ?? 0;
-    }
-  } else {
-    // Last working year — no next-year salary to compare
-    return overrideGrowth ?? defaultGrowth ?? 0;
+  if (nextSalary !== undefined && currentSalary !== 0 && overrideGrowth === undefined) {
+    return ((nextSalary - currentSalary) / currentSalary) * 100;
   }
+  return overrideGrowth ?? defaultGrowth ?? 0;
 }
 
 function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred'): number {
