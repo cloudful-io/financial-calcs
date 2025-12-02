@@ -90,7 +90,7 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
   const endYear = startYear + yearsToProject;
 
   const salaryMap = calculateSalaryHistory(input);
-  const high3 = calculateHigh3(salaryMap, startYear, retirementYear, input.high3Salary);
+  const high3 = calculateHigh3(salaryMap, startYear, retirementYear, retirementType, input.high3Salary);
   const yearsOfService = calculateYearsOfService(input);
   const pensionReduction = calculatePensionReduction(input, yearsOfService);
   let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
@@ -164,8 +164,8 @@ function calculateSalaryHistory(input: FersPensionInput): Record<number, number>
   return salaryMap;
 }
 
-function calculateHigh3(salaryMap: Record<number, number>, startYear: number, endYear: number, high3SalaryOverride?: number): number {
-  if (high3SalaryOverride !== undefined) return high3SalaryOverride;
+function calculateHigh3(salaryMap: Record<number, number>, startYear: number, endYear: number, retirementType: string, high3SalaryOverride?: number): number {
+  if (high3SalaryOverride !== undefined && retirementType === "deferred") return high3SalaryOverride;
 
   const last3 = Object.keys(salaryMap)
     .map(y => salaryMap[Number(y)])
