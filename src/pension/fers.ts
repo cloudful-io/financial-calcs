@@ -292,7 +292,7 @@ export function calculateFersPensionProjectionWithOverrides(
     };
 
     row.hasOverride = hasOverride;
-    
+
     if (year < retirementYear) {
       // BEFORE RETIREMENT
       if (retirementType === 'deferred' && year > serviceEndYear) {
@@ -303,12 +303,26 @@ export function calculateFersPensionProjectionWithOverrides(
         const salary = salaryMap[year];
         row.salary = salary!;
 
-        if (override.salary !== undefined) {
-          row.salaryGrowthRate = 0;
-        } else if (override.salaryGrowthRate !== undefined) {
-          row.salaryGrowthRate = override.salaryGrowthRate;
+        if (year < retirementYear - 1) {
+          const thisSalary = salaryMap[year];
+          const nextSalary = salaryMap[year + 1];
+
+          if (override.salary !== undefined) {
+            // Calculate TRUE growth from next year's salary
+            if (nextSalary !== undefined && thisSalary !== 0) {
+              row.salaryGrowthRate = ((nextSalary - thisSalary!) / thisSalary!) * 100;
+            } else {
+              // Fallback if next salary unavailable
+              row.salaryGrowthRate = 0;
+            }
+          } else if (override.salaryGrowthRate !== undefined) {
+            row.salaryGrowthRate = override.salaryGrowthRate;
+          } else {
+            row.salaryGrowthRate = defaultGrowthRate;
+          }
         } else {
-          row.salaryGrowthRate = defaultGrowthRate;
+          // Last working year — no next-year salary to compare
+          row.salaryGrowthRate = override.salaryGrowthRate ?? defaultGrowthRate;
         }
       }
 
