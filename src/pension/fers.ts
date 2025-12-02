@@ -30,6 +30,7 @@ export interface FersPensionProjectionRow {
   monthlyPension?: number;
   salaryGrowthRate: number;
   colaApplied: number;
+  hasOverride?: boolean;
 }
 
 export interface FersPensionValidationError {
@@ -211,26 +212,17 @@ export function calculateFersPensionProjectionWithOverrides(
   let prevSalary = currentSalary;
 
   for (let year = startYear; year < retirementYear; year++) {
-    const override = yearOverrides[year] || {};
+    const override = (yearOverrides && yearOverrides[year]) || {};
 
-    let finalSalary = prevSalary;
+    const salaryThisYear = override.salary !== undefined ? override.salary : prevSalary;
 
-    if (override.salary !== undefined) {
-      // Rule 1: explicit salary override
-      finalSalary = override.salary;
-    } else if (override.salaryGrowthRate !== undefined) {
-      // Rule 2: overridden growth rate
-      finalSalary = prevSalary * (1 + override.salaryGrowthRate / 100);
-    } else {
-      // Rule 3: default growth rate
-      finalSalary = prevSalary * (1 + defaultGrowthRate / 100);
-    }
+    salaryMap[year] = salaryThisYear;
 
-    salaryMap[year] = finalSalary;
-    prevSalary = finalSalary;
+    const growthToUse = override.salaryGrowthRate !== undefined ? override.salaryGrowthRate : defaultGrowthRate;
+
+    prevSalary = salaryThisYear * (1 + growthToUse / 100);
   }
 
-  // If already retired at projection start, preserve current salary for high-3 math
   if (startYear >= retirementYear) {
     salaryMap[startYear] = currentSalary;
   }
@@ -284,6 +276,11 @@ export function calculateFersPensionProjectionWithOverrides(
     const age = year - birthYear;
     const override = yearOverrides[year] || {};
 
+    const hasOverride =
+      override.salary !== undefined ||
+      override.salaryGrowthRate !== undefined ||
+      override.colaApplied !== undefined;
+      
     const row: FersPensionProjectionRow = {
       year,
       age,
@@ -294,6 +291,8 @@ export function calculateFersPensionProjectionWithOverrides(
       monthlyPension: 0,
     };
 
+    row.hasOverride = hasOverride;
+    
     if (year < retirementYear) {
       // BEFORE RETIREMENT
       if (retirementType === 'deferred' && year > serviceEndYear) {
