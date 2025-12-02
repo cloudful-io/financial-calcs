@@ -1,3 +1,5 @@
+// -------------------------- Types --------------------------
+
 export interface FersPensionInput {
   startYear: number;
   birthYear: number;
@@ -6,7 +8,7 @@ export interface FersPensionInput {
   retirementAge: number;
   currentSalary: number;
   salaryGrowthRate: number;
-  high3Salary: number;  // only used for deferred retirement type
+  high3Salary: number;
   colaPercent: number;
   pensionMultiplier: number;
   yearsToProject: number;
@@ -17,9 +19,9 @@ export interface FersPensionInput {
 export type FersPensionYearOverrides = Record<number, FersPensionOverride>;
 
 export interface FersPensionOverride {
-  salary?: number; 
-  salaryGrowthRate?: number;        
-  colaApplied?: number;    
+  salary?: number;
+  salaryGrowthRate?: number;
+  colaApplied?: number;
 }
 
 export interface FersPensionProjectionRow {
@@ -38,16 +40,15 @@ export interface FersPensionValidationError {
   message: string;
 }
 
+// -------------------------- Validation --------------------------
+
 export function validateFersPensionInput(input: FersPensionInput): FersPensionValidationError[] {
   const errors: FersPensionValidationError[] = [];
-
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
     retirementAge, currentSalary, salaryGrowthRate,
     high3Salary, yearsToProject, retirementType
   } = input;
-
-  const serviceStartAge = serviceStartYear - birthYear;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
   if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
@@ -58,143 +59,25 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   if (currentSalary <= 0) errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
   if (salaryGrowthRate < -100) errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
 
-  //  Assume person cannot start federal job until 16
+  const serviceStartAge = serviceStartYear - birthYear;
   if (serviceStartAge < 16) errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
 
   const yearsOfService = retirementAge - (serviceStartYear - birthYear);
   const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
 
   if (minimumServiceYear === 0) errors.push({ field: "retirementType", message: "Not eligible to retire with pension" });
-
-  if (yearsOfService < minimumServiceYear) {
-    errors.push({
-      field: "serviceStartYear",
-      message: `Must serve at least ${minimumServiceYear} years for ${retirementType} retirement`,
-    });
-  }
-
-  if (retirementType === "deferred" && high3Salary <= 0) {
-    errors.push({ field: "high3Salary", message: "High-3 salary must be provided for deferred retirement" });
-  }
+  if (yearsOfService < minimumServiceYear) errors.push({ field: "serviceStartYear", message: `Must serve at least ${minimumServiceYear} years for ${retirementType} retirement` });
+  if (retirementType === "deferred" && high3Salary <= 0) errors.push({ field: "high3Salary", message: "High-3 salary must be provided for deferred retirement" });
 
   return errors;
 }
 
-export function calculateFersPensionProjection(input: FersPensionInput): FersPensionProjectionRow[] {
-  const {
-    startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
-    currentSalary, salaryGrowthRate, high3Salary, colaPercent,
-    pensionMultiplier, yearsToProject, retirementType
-  } = input;
-
-  const errors = validateFersPensionInput(input);
-
-  if (errors.length > 0) {
-    const err = new Error("FERS pension input validation failed");
-    (err as any).validationErrors = errors;
-    throw err;
-  }
-
-  const retirementYear = birthYear + retirementAge;
-  const endYear = startYear + yearsToProject;
-
-  const salaries: number[] = [];
-  let salary = currentSalary;
-  for (let year = startYear; year < retirementYear; year++) {
-    salaries.push(salary);
-    salary *= 1 + salaryGrowthRate / 100;
-  }
-  // Handle case where projection starts when the person is already retired
-  if (startYear >= retirementYear)
-    salaries.push(currentSalary);
-
-  let high3 = salaries.slice(-3).reduce((sum, s) => sum + s, 0) / Math.min(3, salaries.length);
-   
-  if (retirementType === 'deferred')
-    high3 = high3Salary;
-
-  let yearsOfService = retirementAge - (serviceStartYear - birthYear);
-
-  if (retirementType === "deferred")
-    yearsOfService = serviceEndYear - serviceStartYear;
-
-  const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
-
-  let pensionReduction = 0;
-  if (retirementType === 'mra10' || retirementType === 'deferred') {
-    const yearsUnder62 = Math.max(0, 62 - retirementAge);
-
-    if (yearsOfService < 30)
-    {
-      // Special Case: no deduction for deferred retirement if retiring at 60 or older with 20 years of service or more
-      if (retirementType === 'deferred' && yearsOfService >= 20 && retirementAge >= 60)
-        pensionReduction = 0;
-      else  
-        pensionReduction = 5 * yearsUnder62;
-    }
-  }
-
-  let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
-
-  const data: FersPensionProjectionRow[] = [];
-  for (let year = startYear; year < endYear; year++) {
-    const age = year - birthYear;
-    const row: FersPensionProjectionRow = { year, age, salaryGrowthRate: 0, colaApplied: 0 };
-
-    // Working Age
-    if (year < retirementYear) {
-      // Deferred retirement type: passed service end year and not at retirement age yet
-      if (retirementType === 'deferred' && year > serviceEndYear && year < retirementYear)
-      {
-        row.salary = 0;
-        row.salaryGrowthRate = 0;
-        row.pension = 0;
-        row.monthlyPension = 0;
-      }
-      else
-      {
-        const salary = salaries[year - startYear];
-      
-        if (salary !== undefined) {
-          row.salary = salary;
-        }
-        row.salaryGrowthRate = salaryGrowthRate;
-        row.pension = 0;
-        row.monthlyPension = 0;
-      }
-    }
-    // Retirement Age 
-    else {
-      // Set salary to 0
-      row.salary = 0;
-
-      if (age >= 63 && year > retirementYear) {
-        pension *= 1 + colaPercent / 100;
-        row.colaApplied = colaPercent;
-      }
-      if (retirementType === 'deferred' && age < 62) {
-        row.colaApplied = 0;
-      }
-      row.pension = pension;
-      row.monthlyPension = pension / 12;
-    }
-
-    data.push(row);
-  }
-
-  return data;
+// -------------------------- Main Projection --------------------------
+export function calculateFersPensionProjection(input: FersPensionInput) {
+  return calculateFersPensionProjectionWithOverrides({ ...input, yearOverrides: {} });
 }
 
-export function calculateFersPensionProjectionWithOverrides(
-  input: FersPensionInput
-): FersPensionProjectionRow[] {
-  const {
-    startYear, birthYear, serviceStartYear, serviceEndYear, retirementAge,
-    currentSalary, salaryGrowthRate: defaultGrowthRate, high3Salary,
-    colaPercent: defaultCola, pensionMultiplier, yearsToProject,
-    retirementType, yearOverrides = {}
-  } = input;
-
+export function calculateFersPensionProjectionWithOverrides(input: FersPensionInput): FersPensionProjectionRow[] {
   const errors = validateFersPensionInput(input);
   if (errors.length > 0) {
     const err = new Error("FERS pension input validation failed");
@@ -202,153 +85,121 @@ export function calculateFersPensionProjectionWithOverrides(
     throw err;
   }
 
+  const { startYear, birthYear, retirementAge, yearsToProject, retirementType, colaPercent: defaultCola, pensionMultiplier, yearOverrides = {} } = input;
   const retirementYear = birthYear + retirementAge;
   const endYear = startYear + yearsToProject;
+
+  const salaryMap = calculateSalaryHistory(input);
+  const high3 = calculateHigh3(salaryMap, startYear, retirementYear, input.high3Salary);
+  const yearsOfService = calculateYearsOfService(input);
+  const pensionReduction = calculatePensionReduction(input, yearsOfService);
+  let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
 
   const rows: FersPensionProjectionRow[] = [];
 
-  // --- BUILD SALARY HISTORY WITH OVERRIDES ---
-  const salaryMap: Record<number, number> = {};
-  let prevSalary = currentSalary;
-
-  for (let year = startYear; year < retirementYear; year++) {
-    const override = (yearOverrides && yearOverrides[year]) || {};
-
-    const salaryThisYear = override.salary !== undefined ? override.salary : prevSalary;
-
-    salaryMap[year] = salaryThisYear;
-
-    const growthToUse = override.salaryGrowthRate !== undefined ? override.salaryGrowthRate : defaultGrowthRate;
-
-    prevSalary = salaryThisYear * (1 + growthToUse / 100);
-  }
-
-  if (startYear >= retirementYear) {
-    salaryMap[startYear] = currentSalary;
-  }
-
-  let lastYears = Object.keys(salaryMap)
-    .map(y => salaryMap[Number(y)])
-    .slice(-3);
-
-  const validYears = (lastYears ?? []).filter(
-    (n): n is number => n !== undefined
-  );
-
-  const total = validYears.reduce((a, b) => a + b, 0);
-
-  let high3 =
-    validYears.length > 0
-      ? total / Math.min(3, validYears.length)
-      : 0;
-
-  if (retirementType === 'deferred') {
-    high3 = high3Salary;
-  }
-
-  // --- YEARS OF SERVICE ---
-  let yearsOfService = retirementAge - (serviceStartYear - birthYear);
-  if (retirementType === "deferred") {
-    yearsOfService = serviceEndYear - serviceStartYear;
-  }
-
-  // --- REDUCTIONS ---
-  const msy = getMinimumServiceYear(birthYear, retirementAge, retirementType);
-  let pensionReduction = 0;
-
-  if (retirementType === 'mra10' || retirementType === 'deferred') {
-    const under62 = Math.max(0, 62 - retirementAge);
-
-    if (yearsOfService < 30) {
-      if (retirementType === 'deferred' && yearsOfService >= 20 && retirementAge >= 60) {
-        pensionReduction = 0;
-      } else {
-        pensionReduction = 5 * under62;
-      }
-    }
-  }
-
-  // --- BASE PENSION AT RETIREMENT ---
-  let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
-
-  // --- FINAL ROW GENERATION ---
   for (let year = startYear; year < endYear; year++) {
     const age = year - birthYear;
     const override = yearOverrides[year] || {};
+    const hasOverride = override.salary !== undefined || override.salaryGrowthRate !== undefined || override.colaApplied !== undefined;
 
-    const hasOverride =
-      override.salary !== undefined ||
-      override.salaryGrowthRate !== undefined ||
-      override.colaApplied !== undefined;
-      
     const row: FersPensionProjectionRow = {
       year,
       age,
-      salaryGrowthRate: 0,
-      colaApplied: 0,
       salary: 0,
       pension: 0,
       monthlyPension: 0,
+      salaryGrowthRate: 0,
+      colaApplied: 0,
+      hasOverride,
     };
 
-    row.hasOverride = hasOverride;
-
+    // Before retirement
     if (year < retirementYear) {
-      // BEFORE RETIREMENT
-      if (retirementType === 'deferred' && year > serviceEndYear) {
-        // No salary during waiting years
+      if (retirementType === 'deferred' && year > input.serviceEndYear) {
         row.salary = 0;
         row.salaryGrowthRate = 0;
       } else {
-        const salary = salaryMap[year];
-        row.salary = salary!;
-
-        if (year < retirementYear - 1) {
-          const thisSalary = salaryMap[year];
-          const nextSalary = salaryMap[year + 1];
-
-          if (override.salary !== undefined) {
-            // Calculate TRUE growth from next year's salary
-            if (nextSalary !== undefined && thisSalary !== 0) {
-              row.salaryGrowthRate = ((nextSalary - thisSalary!) / thisSalary!) * 100;
-            } else {
-              // Fallback if next salary unavailable
-              row.salaryGrowthRate = 0;
-            }
-          } else if (override.salaryGrowthRate !== undefined) {
-            row.salaryGrowthRate = override.salaryGrowthRate;
-          } else {
-            row.salaryGrowthRate = defaultGrowthRate;
-          }
-        } else {
-          // Last working year — no next-year salary to compare
-          row.salaryGrowthRate = override.salaryGrowthRate ?? defaultGrowthRate;
-        }
+        row.salary = salaryMap[year] ?? 0;
+        const nextSalary = salaryMap[year + 1];
+        row.salaryGrowthRate = calculateSalaryGrowthRate(row.salary!, nextSalary, override.salaryGrowthRate, input.salaryGrowthRate);
       }
-
-      row.pension = 0;
-      row.monthlyPension = 0;
-    } else {
-      // AFTER RETIREMENT
+    } 
+    // After retirement
+    else {
       row.salary = 0;
-
       let cola = override.colaApplied ?? defaultCola;
-
-      if (age >= 63 && year > retirementYear) {
-        pension *= 1 + cola / 100;
-        row.colaApplied = cola;
-      }
-
-      if (retirementType === 'deferred' && age < 62) {
-        row.colaApplied = 0; // no COLA yet
-      }
-
+      if (age >= 63 && year > retirementYear) pension *= 1 + cola / 100;
+      if (retirementType === 'deferred' && age < 62) cola = 0;
+      row.colaApplied = cola;
       row.pension = pension;
       row.monthlyPension = pension / 12;
     }
     rows.push(row);
   }
   return rows;
+}
+
+// -------------------------- Helpers --------------------------
+
+function calculateSalaryHistory(input: FersPensionInput): Record<number, number> {
+  const { startYear, retirementAge, birthYear, currentSalary, salaryGrowthRate, yearOverrides = {} } = input;
+  const retirementYear = birthYear + retirementAge;
+  const salaryMap: Record<number, number> = {};
+  let prevSalary = currentSalary;
+
+  for (let year = startYear; year < retirementYear; year++) {
+    const override = yearOverrides[year] || {};
+    const salaryThisYear = override.salary ?? prevSalary;
+    salaryMap[year] = salaryThisYear;
+
+    const growthToUse = override.salaryGrowthRate ?? salaryGrowthRate;
+    prevSalary = salaryThisYear * (1 + growthToUse / 100);
+  }
+
+  if (startYear >= retirementYear) salaryMap[startYear] = currentSalary;
+
+  return salaryMap;
+}
+
+function calculateHigh3(salaryMap: Record<number, number>, startYear: number, endYear: number, high3SalaryOverride?: number): number {
+  if (high3SalaryOverride !== undefined) return high3SalaryOverride;
+
+  const last3 = Object.keys(salaryMap)
+    .map(y => salaryMap[Number(y)])
+    .slice(-3)
+    .filter((n): n is number => n !== undefined);
+
+  if (last3.length === 0) return 0;
+
+  return last3.reduce((sum, s) => sum + s, 0) / Math.min(3, last3.length);
+}
+
+function calculateYearsOfService(input: FersPensionInput): number {
+  const { retirementAge, serviceStartYear, serviceEndYear, birthYear, retirementType } = input;
+  if (retirementType === 'deferred') return serviceEndYear - serviceStartYear;
+  return retirementAge - (serviceStartYear - birthYear);
+}
+
+function calculatePensionReduction(input: FersPensionInput, yearsOfService: number): number {
+  const { retirementAge, retirementType } = input;
+  let reduction = 0;
+
+  if (retirementType === 'mra10' || retirementType === 'deferred') {
+    const under62 = Math.max(0, 62 - retirementAge);
+    if (yearsOfService < 30) {
+      if (retirementType === 'deferred' && yearsOfService >= 20 && retirementAge >= 60) reduction = 0;
+      else reduction = 5 * under62;
+    }
+  }
+
+  return reduction;
+}
+
+function calculateSalaryGrowthRate(currentSalary: number, nextSalary: number | undefined, overrideGrowth?: number, defaultGrowth?: number): number {
+  if (nextSalary !== undefined && currentSalary !== 0 && overrideGrowth === undefined) {
+    return ((nextSalary - currentSalary) / currentSalary) * 100;
+  }
+  return overrideGrowth ?? defaultGrowth ?? 0;
 }
 
 function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred'): number {
