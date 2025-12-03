@@ -21,7 +21,7 @@ export interface SocialSecurityBenefitProjectionRow {
   colaApplied: number;
   annualBenefit: number;
   monthlyBenefit: number;
-  hasOverride?: boolean;
+  //hasOverride?: boolean;
 }
 
 export interface SocialSecurityValidationError {
