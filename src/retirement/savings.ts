@@ -91,10 +91,10 @@ export function calculateRetirementSavingsProjectionWithOverrides(
   }
 
   // Treat negative balance as 0
-  let balance = initialBalance < 0 ? 0 : initialBalance;
+  let balance = Math.max(initialBalance, 0);
 
   // Treat negative contribution as 0
-  let contribution = initialContribution < 0 ? 0 : initialContribution;
+  let contribution = Math.max(initialContribution, 0);
 
   const rows: RetirementSavingsProjectionRow[] = [];
 
@@ -106,28 +106,50 @@ export function calculateRetirementSavingsProjectionWithOverrides(
     const override = yearOverrides[year] || {};
     const hasOverride = override.contribution !== undefined || override.yieldPercent !== undefined || override.withdrawRate !== undefined || override.annualWithdraw !== undefined;
 
-    // Adjust contribution after the first year
-    if (i > 0) {
-      contribution = isWithdrawing ? 0 : contribution * (1 + contributionIncreaseRate / 100);
-    } 
-    // Withdrawing in the first projection year
-    else if (isWithdrawing) {
-      contribution = 0;
+    const beginningBalance = balance;
+
+    if (override.contribution !== undefined) {
+      contribution = Math.max(override.contribution, 0);
+    } else {
+      if (i > 0) {
+        contribution = isWithdrawing ? 0 : contribution * (1 + contributionIncreaseRate / 100);
+      } else if (isWithdrawing) {
+        contribution = 0;
+      }
     }
 
-    const annualWithdraw = isWithdrawing ? (estimatedWithdrawRate / 100) * balance : 0;
-    const yieldAmount = (estimatedYield / 100) * balance;
-    const beginningBalance = balance;
-    balance += yieldAmount + contribution - annualWithdraw;
+    const yieldPercent = override.yieldPercent ?? estimatedYield;
+    const yieldAmount = (yieldPercent / 100) * beginningBalance;
+
+    let withdrawRate = 0;
+    let annualWithdraw = 0;
+
+    if (isWithdrawing) {
+      if (override.annualWithdraw !== undefined) {
+        annualWithdraw = Math.max(override.annualWithdraw, 0);
+        withdrawRate =
+          beginningBalance > 0 ? (annualWithdraw / beginningBalance) * 100 : 0;
+      } else {
+        withdrawRate = override.withdrawRate ?? estimatedWithdrawRate;
+        annualWithdraw = (withdrawRate / 100) * beginningBalance;
+      }
+    }
+
+    const monthlyWithdraw = annualWithdraw / 12;
+
+    //
+    // ----- 4. Ending balance -----
+    //
+    balance = beginningBalance + yieldAmount + contribution - annualWithdraw;
 
     rows.push({
       year,
       age,
       beginningBalance,
       contribution,
-      yieldPercent: estimatedYield,
-      withdrawRate: isWithdrawing ? estimatedWithdrawRate : 0,
-      monthlyWithdraw: annualWithdraw / 12,
+      yieldPercent,
+      withdrawRate,
+      monthlyWithdraw,
       annualWithdraw,
       endingBalance: balance,
       hasOverride
