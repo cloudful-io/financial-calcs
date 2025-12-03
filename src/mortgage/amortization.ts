@@ -8,6 +8,7 @@ export interface MortgageAmortizationInput {
 }
 
 export interface AmortizationRow {
+  year: number;
   month: number;
   date: string;
   payment: number;
@@ -90,6 +91,7 @@ export function calculateMortgageAmortization(
     );
 
     data.push({
+      year: Math.ceil(i / 12),
       month: i,
       date: paymentDate.toLocaleDateString(),
       payment: principal + interest,
