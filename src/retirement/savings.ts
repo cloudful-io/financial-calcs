@@ -16,9 +16,9 @@ export type RetirementSavingsYearOverrides = Record<number, RetirementSavingsOve
 
 export interface RetirementSavingsOverride {
   contribution?: number;
-  yieldRate?: number;
+  yieldPercent?: number;
   withdrawRate?: number;
-  withdrawAmount?: number;
+  annualWithdraw?: number;
 }
 
 export interface RetirementSavingsProjectionRow {
@@ -31,6 +31,7 @@ export interface RetirementSavingsProjectionRow {
   monthlyWithdraw: number;
   annualWithdraw: number;
   endingBalance: number;
+  hasOverride?: boolean;
 }
 
 export interface RetirementSavingsValidationError {
@@ -67,8 +68,12 @@ export function validateRetirementSavingsInput(
   return errors;
 }
 
-// --- Pure calculation function ---
-export function calculateRetirementSavingsProjection(
+// --- Main Projection ---
+export function calculateRetirementSavingsProjection(input: RetirementSavingsInput) {
+  return calculateRetirementSavingsProjectionWithOverrides({ ...input, yearOverrides: {} });
+}
+
+export function calculateRetirementSavingsProjectionWithOverrides(
   input: RetirementSavingsInput
 ): RetirementSavingsProjectionRow[] {
   const {

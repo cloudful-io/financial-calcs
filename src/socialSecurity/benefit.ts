@@ -12,7 +12,7 @@ export interface SocialSecurityBenefitInput {
 export type SocialSecurityBenefitYearOverrides = Record<number, SocialSecurityBenefitOverride>;
 
 export interface SocialSecurityBenefitOverride {
-  colaPercent?: number;
+  colaApplied?: number;
 }
 
 export interface SocialSecurityBenefitProjectionRow {
@@ -21,6 +21,7 @@ export interface SocialSecurityBenefitProjectionRow {
   colaApplied: number;
   annualBenefit: number;
   monthlyBenefit: number;
+  hasOverride?: boolean;
 }
 
 export interface SocialSecurityValidationError {
@@ -44,11 +45,15 @@ export function validateSocialSecurityBenefitInput(
   return errors;
 }
 
-// --- Pure calculation function ---
-export function calculateSocialSecurityBenefitProjection(
+// --- Main Projection ---
+export function calculateSocialSecurityBenefitProjection(input: SocialSecurityBenefitInput) {
+  return calculateSocialSecurityBenefitProjectionWithOverrides({ ...input, yearOverrides: {} });
+}
+
+export function calculateSocialSecurityBenefitProjectionWithOverrides(
   input: SocialSecurityBenefitInput
 ): SocialSecurityBenefitProjectionRow[] {
-  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
+  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject, yearOverrides = {} } = input;
 
   const errors = validateSocialSecurityBenefitInput(input);
     
@@ -67,27 +72,33 @@ export function calculateSocialSecurityBenefitProjection(
 
   // Adjust for early/late claiming
   const reductionOrIncreaseFactor = calculateAdjustmentFactor(claimingAge, fullRetirementAge);
-  let annualBenefit = estimatedPIA * 12 * reductionOrIncreaseFactor;
+  let annualBenefitBase = estimatedPIA * 12 * reductionOrIncreaseFactor;
 
   const data: SocialSecurityBenefitProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
     const age = year - birthYear;
-    let colaApplied = 0;
+    //let colaApplied = 0;
+
+    const override = (yearOverrides && yearOverrides[year]) || {};
+    const hasOverride = override.colaApplied !== undefined;
 
     const isClaiming = year >= claimingYear;
-    const benefitForYear = isClaiming ? annualBenefit : 0;
+    const benefitForYear = isClaiming ? annualBenefitBase : 0;
 
+    let colaAppliedThisIteration = 0;
     if (i > 0 && isClaiming) {
-      annualBenefit *= 1 + averageCOLA / 100; // apply COLA increase
-      colaApplied = averageCOLA;
+      // Use override for this year's COLA if present, otherwise use averageCOLA
+      const colaToUse = override.colaApplied ?? averageCOLA;
+      annualBenefitBase = annualBenefitBase * (1 + colaToUse / 100);
+      colaAppliedThisIteration = colaToUse;
     }
 
     data.push({
       year,
       age,
-      colaApplied,
+      colaApplied: colaAppliedThisIteration,
       annualBenefit: Math.round(benefitForYear),
       monthlyBenefit: Math.round(benefitForYear / 12),
     });
