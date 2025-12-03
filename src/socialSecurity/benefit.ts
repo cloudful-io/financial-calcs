@@ -21,7 +21,7 @@ export interface SocialSecurityBenefitProjectionRow {
   colaApplied: number;
   annualBenefit: number;
   monthlyBenefit: number;
-  hasOverride?: boolean;
+  //hasOverride?: boolean;
 }
 
 export interface SocialSecurityValidationError {
@@ -101,7 +101,7 @@ export function calculateSocialSecurityBenefitProjectionWithOverrides(
       colaApplied: colaAppliedThisIteration,
       annualBenefit: Math.round(benefitForYear),
       monthlyBenefit: Math.round(benefitForYear / 12),
-      hasOverride
+      //hasOverride
     });
   }
 

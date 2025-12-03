@@ -31,7 +31,7 @@ export interface RetirementSavingsProjectionRow {
   monthlyWithdraw: number;
   annualWithdraw: number;
   endingBalance: number;
-  hasOverride?: boolean;
+  //hasOverride?: boolean;
 }
 
 export interface RetirementSavingsValidationError {
