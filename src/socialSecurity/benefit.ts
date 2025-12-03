@@ -101,6 +101,7 @@ export function calculateSocialSecurityBenefitProjectionWithOverrides(
       colaApplied: colaAppliedThisIteration,
       annualBenefit: Math.round(benefitForYear),
       monthlyBenefit: Math.round(benefitForYear / 12),
+      hasOverride
     });
   }
 
