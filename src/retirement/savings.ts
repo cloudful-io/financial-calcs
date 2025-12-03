@@ -148,7 +148,7 @@ export function calculateRetirementSavingsProjectionWithOverrides(
       beginningBalance,
       contribution,
       yieldPercent,
-      withdrawRate,
+      withdrawRate: Math.round(withdrawRate*100)/100,
       monthlyWithdraw,
       annualWithdraw,
       endingBalance: balance,
