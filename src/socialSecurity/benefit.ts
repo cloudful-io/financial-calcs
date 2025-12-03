@@ -21,7 +21,7 @@ export interface SocialSecurityBenefitProjectionRow {
   colaApplied: number;
   annualBenefit: number;
   monthlyBenefit: number;
-  //hasOverride?: boolean;
+  hasOverride?: boolean;
 }
 
 export interface SocialSecurityValidationError {
@@ -74,13 +74,12 @@ export function calculateSocialSecurityBenefitProjectionWithOverrides(
   const reductionOrIncreaseFactor = calculateAdjustmentFactor(claimingAge, fullRetirementAge);
   let annualBenefitBase = estimatedPIA * 12 * reductionOrIncreaseFactor;
 
-  const data: SocialSecurityBenefitProjectionRow[] = [];
+  const rows: SocialSecurityBenefitProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
     const age = year - birthYear;
-    //let colaApplied = 0;
-
+    
     const override = (yearOverrides && yearOverrides[year]) || {};
     const hasOverride = override.colaApplied !== undefined;
 
@@ -95,17 +94,17 @@ export function calculateSocialSecurityBenefitProjectionWithOverrides(
       colaAppliedThisIteration = colaToUse;
     }
 
-    data.push({
+    rows.push({
       year,
       age,
       colaApplied: colaAppliedThisIteration,
       annualBenefit: Math.round(benefitForYear),
       monthlyBenefit: Math.round(benefitForYear / 12),
-      //hasOverride
+      hasOverride
     });
   }
 
-  return data;
+  return rows;
 }
 
 // --- Helpers ---
