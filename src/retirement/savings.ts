@@ -31,7 +31,7 @@ export interface RetirementSavingsProjectionRow {
   monthlyWithdraw: number;
   annualWithdraw: number;
   endingBalance: number;
-  //hasOverride?: boolean;
+  hasOverride?: boolean;
 }
 
 export interface RetirementSavingsValidationError {
@@ -79,7 +79,7 @@ export function calculateRetirementSavingsProjectionWithOverrides(
   const {
     startYear, birthYear, initialBalance, initialContribution,
     estimatedYield, estimatedWithdrawRate, contributionIncreaseRate,
-    withdrawStartAge, yearsToProject
+    withdrawStartAge, yearsToProject, yearOverrides = {}
   } = input;
 
   const errors = validateRetirementSavingsInput(input);
@@ -96,12 +96,15 @@ export function calculateRetirementSavingsProjectionWithOverrides(
   // Treat negative contribution as 0
   let contribution = initialContribution < 0 ? 0 : initialContribution;
 
-  const data: RetirementSavingsProjectionRow[] = [];
+  const rows: RetirementSavingsProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
     const age = year - birthYear;
     const isWithdrawing = age >= withdrawStartAge;
+
+    const override = yearOverrides[year] || {};
+    const hasOverride = override.contribution !== undefined || override.yieldPercent !== undefined || override.withdrawRate !== undefined || override.annualWithdraw !== undefined;
 
     // Adjust contribution after the first year
     if (i > 0) {
@@ -117,7 +120,7 @@ export function calculateRetirementSavingsProjectionWithOverrides(
     const beginningBalance = balance;
     balance += yieldAmount + contribution - annualWithdraw;
 
-    data.push({
+    rows.push({
       year,
       age,
       beginningBalance,
@@ -127,8 +130,9 @@ export function calculateRetirementSavingsProjectionWithOverrides(
       monthlyWithdraw: annualWithdraw / 12,
       annualWithdraw,
       endingBalance: balance,
+      hasOverride
     });
   }
 
-  return data;
+  return rows;
 }
