@@ -163,7 +163,7 @@ function calculateSalaryHistory(input: FersPensionInput): Record<number, number>
   for (let year = startYear; year < retirementYear; year++) {
     const override = yearOverrides[year] || {};
     const salaryThisYear = override.salary ?? prevSalary;
-    salaryMap[year] = salaryThisYear;
+    salaryMap[year] = Number(salaryThisYear);
 
     const growthToUse = override.salaryGrowthRate ?? salaryGrowthRate;
     prevSalary = salaryThisYear * (1 + growthToUse / 100);
