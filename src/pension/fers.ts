@@ -47,7 +47,7 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
     retirementAge, currentSalary, salaryGrowthRate,
-    high3Salary, yearsToProject, retirementType
+    high3Salary, yearsToProject, retirementType, pensionMultiplier
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
@@ -63,7 +63,7 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   if (serviceStartAge < 16) errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
 
   const yearsOfService = retirementAge - (serviceStartYear - birthYear);
-  const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType);
+  const minimumServiceYear = getMinimumServiceYear(birthYear, retirementAge, retirementType, pensionMultiplier);
 
   if (minimumServiceYear === 0) errors.push({ field: "retirementType", message: "Not eligible to retire with pension" });
   if (yearsOfService < minimumServiceYear) errors.push({ field: "serviceStartYear", message: `Must serve at least ${minimumServiceYear} years for ${retirementType} retirement` });
@@ -220,10 +220,17 @@ function calculateSalaryGrowthRate(
   return overrideGrowth ?? defaultGrowth ?? 0;
 }
 
-function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred'): number {
+function getMinimumServiceYear(birthYear: number, retirementAge: number, retirementType: 'regular' | 'mra10' | 'early' | 'deferred', pensionMultiplier: number): number {
 
   const mra = getMRA(birthYear);
 
+  // Special provision employees
+  if (pensionMultiplier > 1.5) {
+    if (retirementAge >= 50)
+      return 20;
+    else
+      return 25;
+  }
   if ( retirementType === 'regular') {
     if (retirementAge >= 62)
       return 5;
