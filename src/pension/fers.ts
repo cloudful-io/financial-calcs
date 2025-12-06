@@ -93,7 +93,17 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
   const high3 = calculateHigh3(salaryMap, startYear, retirementYear, retirementType, input.high3Salary);
   const yearsOfService = calculateYearsOfService(input);
   const pensionReduction = calculatePensionReduction(input, yearsOfService);
-  let pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
+  let pension = 0;
+
+  // Special Provision Employees
+  if (pensionMultiplier === 1.7) {
+    const totalPercent = calculateSpecialProvisionMultiplier(yearsOfService);
+    pension = high3 * (totalPercent / 100) * (1 - pensionReduction / 100);
+  } 
+  // Regular FERS
+  else {  
+    pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
+  }
 
   const rows: FersPensionProjectionRow[] = [];
 
@@ -250,6 +260,15 @@ function getMinimumServiceYear(birthYear: number, retirementAge: number, retirem
   // Unreachable code
   return 0;
 }
+
+function calculateSpecialProvisionMultiplier(yearsOfService: number): number {
+  const first20 = Math.min(20, yearsOfService);
+  const remaining = Math.max(0, yearsOfService - 20);
+
+  // 1st 20 years use 1.7%, rest use 1.0%
+  return first20 * 1.7 + remaining * 1.0;
+}
+
 
 function getMRA(birthYear: number): number {
   if (birthYear < 1948) return 55;
