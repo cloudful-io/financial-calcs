@@ -96,7 +96,7 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
   let pension = 0;
 
   // Special Provision Employees
-  if (pensionMultiplier === 1.7) {
+  if (pensionMultiplier > 1.5) {
     const totalPercent = calculateSpecialProvisionMultiplier(yearsOfService);
     pension = high3 * (totalPercent / 100) * (1 - pensionReduction / 100);
   } 
