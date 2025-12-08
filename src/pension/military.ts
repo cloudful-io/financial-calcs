@@ -79,6 +79,14 @@ export function calculateMilitaryPensionProjectionWithOverrides(input: MilitaryP
   const pensionMultiplier = getPensionMultiplier(retirementType);
   let monthlyPension = high3Salary * yearsOfService * (pensionMultiplier/100);
 
+  if (retirementYear < startYear) {
+    for (let y = retirementYear + 1; y < startYear; y++) {
+      const override = yearOverrides[y];
+      const colaToApply = override?.colaApplied ?? defaultCola;
+      monthlyPension *= 1 + (colaToApply / 100);
+    }
+  }
+
   const rows: MilitaryPensionProjectionRow[] = [];
 
   for (let year = startYear; year < endYear; year++) {
@@ -103,7 +111,7 @@ export function calculateMilitaryPensionProjectionWithOverrides(input: MilitaryP
     } 
     // After retirement
     else {
-      let cola = override.colaApplied ?? defaultCola;
+      const cola = (year === retirementYear) ? 0 : (override.colaApplied ?? defaultCola);
       monthlyPension *= 1 + cola / 100;
       row.colaApplied = cola;
       row.monthlyPension = monthlyPension;
