@@ -5,13 +5,13 @@ export interface RealEstatePropertyInput {
   monthlyMortgage: number;
   mortgageEndYear: number;
   annualPropertyTax: number;
-  estimatedPropertyTaxIncreaseRate: number;
+  propertyTaxIncreaseRate: number;
   annualInsurance: number;
-  estimatedInsuranceIncreaseRate: number;
+  insuranceIncreaseRate: number;
   monthlyHoaFee?: number;
-  estimatedHoaFeeIncreaseRate: number;
+  hoaFeeIncreaseRate: number;
   monthlyRentalIncome?: number;
-  estimatedRentalIncomeIncreaseRate?: number;
+  rentalIncomeIncreaseRate?: number;
   yearsToProject: number;
   yearOverrides?: RealEstatePropertyYearOverrides;
 }
@@ -52,8 +52,8 @@ export function validateRealEstatePropertyInput(
     mortgageEndYear,
     annualPropertyTax,
     annualInsurance,
-    estimatedPropertyTaxIncreaseRate,
-    estimatedInsuranceIncreaseRate,
+    propertyTaxIncreaseRate,
+    insuranceIncreaseRate,
     yearsToProject
   } = input;
 
@@ -81,15 +81,15 @@ export function validateRealEstatePropertyInput(
       message: "Insurance cannot be negative",
     });
 
-  if (estimatedPropertyTaxIncreaseRate < 0)
+  if (propertyTaxIncreaseRate < 0)
     errors.push({
-      field: "estimatedPropertyTaxIncreaseRate",
+      field: "propertyTaxIncreaseRate",
       message: "Property tax increase rate cannot be negative",
     });
 
-  if (estimatedInsuranceIncreaseRate < 0)
+  if (insuranceIncreaseRate < 0)
     errors.push({
-      field: "estimatedInsuranceIncreaseRate",
+      field: "insuranceIncreaseRate",
       message: "Insurance increase rate cannot be negative",
     });
 
@@ -115,13 +115,13 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
     monthlyMortgage,
     mortgageEndYear,
     annualPropertyTax,
-    estimatedPropertyTaxIncreaseRate,
+    propertyTaxIncreaseRate,
     annualInsurance,
-    estimatedInsuranceIncreaseRate,
+    insuranceIncreaseRate,
     monthlyHoaFee = 0,
-    estimatedHoaFeeIncreaseRate,
+    hoaFeeIncreaseRate,
     monthlyRentalIncome,
-    estimatedRentalIncomeIncreaseRate = 0,
+    rentalIncomeIncreaseRate = 0,
     yearsToProject,
     yearOverrides = {},
   } = input;
@@ -152,12 +152,12 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
 
     // Apply inflation (starting from year 2 and beyond)
     if (i > 0) {
-      propertyTaxCurrent *= 1 + estimatedPropertyTaxIncreaseRate / 100;
-      insuranceCurrent *= 1 + estimatedInsuranceIncreaseRate / 100;
-      hoaCurrent *= 1 + (estimatedHoaFeeIncreaseRate ?? 0) / 100;
+      propertyTaxCurrent *= 1 + propertyTaxIncreaseRate / 100;
+      insuranceCurrent *= 1 + insuranceIncreaseRate / 100;
+      hoaCurrent *= 1 + (hoaFeeIncreaseRate ?? 0) / 100;
 
       if (rentalIncomeCurrent !== undefined) {
-        rentalIncomeCurrent *= 1 + (estimatedRentalIncomeIncreaseRate ?? 0) / 100;
+        rentalIncomeCurrent *= 1 + (rentalIncomeIncreaseRate ?? 0) / 100;
       }
     }
 
