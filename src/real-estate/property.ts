@@ -19,7 +19,7 @@ export interface RealEstatePropertyInput {
 export type RealEstatePropertyYearOverrides = Record<number, RealEstatePropertyOverride>;
 
 export interface RealEstatePropertyOverride {
-  monthlyIncome?: number;
+  monthlyRentalIncome?: number;
   monthlyMortgage?: number;
   annualPropertyTax?: number;
   annualInsurance?: number;
@@ -175,7 +175,7 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
       override.monthlyHoaFee ?? hoaCurrent;
 
     const finalIncome =
-      override.monthlyIncome ?? rentalIncomeCurrent;
+      override.monthlyRentalIncome ?? rentalIncomeCurrent;
 
     rows.push({
       year,
