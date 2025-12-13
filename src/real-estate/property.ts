@@ -162,30 +162,30 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
     }
 
     // Apply override values (if any)
-    const finalMortgage =
+    mortgageCurrent =
       year > mortgageEndYear ? 0 : override.monthlyMortgage ?? mortgageCurrent;
 
-    const finalPropertyTax =
+    propertyTaxCurrent =
       override.annualPropertyTax ?? propertyTaxCurrent;
 
-    const finalInsurance =
+    insuranceCurrent =
       override.annualInsurance ?? insuranceCurrent;
 
-    const finalHoa =
+    hoaCurrent =
       override.monthlyHoaFee ?? hoaCurrent;
 
-    const finalIncome =
+    rentalIncomeCurrent =
       override.monthlyRentalIncome ?? rentalIncomeCurrent;
 
     rows.push({
       year,
       age,
 
-      monthlyMortgage: finalMortgage,
-      annualPropertyTax: Math.round(finalPropertyTax),
-      annualInsurance: Math.round(finalInsurance),
-      monthlyHoaFee: Math.round(finalHoa),
-      monthlyRentalIncome: finalIncome !== undefined ? Math.round(finalIncome) : 0,
+      monthlyMortgage: mortgageCurrent,
+      annualPropertyTax: Math.round(propertyTaxCurrent),
+      annualInsurance: Math.round(insuranceCurrent),
+      monthlyHoaFee: Math.round(hoaCurrent),
+      monthlyRentalIncome: rentalIncomeCurrent !== undefined ? Math.round(rentalIncomeCurrent) : 0,
       hasOverride,
     });
   }
