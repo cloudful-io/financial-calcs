@@ -168,20 +168,24 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
     // Apply override values (if any)
     mortgageCurrent =
       year > mortgageEndYear ? 0 : override.monthlyMortgage ?? mortgageCurrent;
+    mortgageCurrent = Number(mortgageCurrent);
 
     propertyTaxCurrent =
       override.annualPropertyTax ?? propertyTaxCurrent;
+    propertyTaxCurrent = Number(propertyTaxCurrent);
 
     insuranceCurrent =
       override.annualInsurance ?? insuranceCurrent;
+    insuranceCurrent = Number(insuranceCurrent);
 
     hoaCurrent =
       override.monthlyHoaFee ?? hoaCurrent;
+    hoaCurrent = Number(hoaCurrent);
 
     rentalIncomeCurrent =
       override.monthlyRentalIncome ?? rentalIncomeCurrent;
 
-    rentalIncomeCurrent = rentalIncomeCurrent !== undefined ? Math.round(rentalIncomeCurrent) : 0;
+    rentalIncomeCurrent = rentalIncomeCurrent !== undefined ? Math.round(Number(rentalIncomeCurrent)) : 0;
     const totalAnnualExpense = propertyTaxCurrent + insuranceCurrent + (hoaCurrent*12) + (mortgageCurrent*12);
 
     rows.push({
