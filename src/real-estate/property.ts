@@ -34,6 +34,10 @@ export interface RealEstatePropertyProjectionRow {
   annualPropertyTax: number;
   annualInsurance: number;
   monthlyHoaFee: number;
+  monthlyIncome: number;
+  annualIncome: number;
+  monthlyExpense: number;
+  annualExpense: number;
   hasOverride?: boolean;
 }
 
@@ -177,15 +181,21 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
     rentalIncomeCurrent =
       override.monthlyRentalIncome ?? rentalIncomeCurrent;
 
+    rentalIncomeCurrent = rentalIncomeCurrent !== undefined ? Math.round(rentalIncomeCurrent) : 0;
+    const totalAnnualExpense = propertyTaxCurrent + insuranceCurrent + (hoaCurrent*12) + (mortgageCurrent*12);
+
     rows.push({
       year,
       age,
-
       monthlyMortgage: mortgageCurrent,
       annualPropertyTax: Math.round(propertyTaxCurrent),
       annualInsurance: Math.round(insuranceCurrent),
       monthlyHoaFee: Math.round(hoaCurrent),
-      monthlyRentalIncome: rentalIncomeCurrent !== undefined ? Math.round(rentalIncomeCurrent) : 0,
+      monthlyRentalIncome: rentalIncomeCurrent,
+      monthlyIncome: rentalIncomeCurrent,
+      annualIncome: rentalIncomeCurrent * 12,
+      monthlyExpense: Math.round(totalAnnualExpense/12),
+      annualExpense: Math.round(totalAnnualExpense),
       hasOverride,
     });
   }
