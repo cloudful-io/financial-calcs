@@ -13,6 +13,7 @@ export interface FersPensionInput {
   pensionMultiplier: number;
   yearsToProject: number;
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
+  survivorBenefitReduction: number;
   yearOverrides?: FersPensionYearOverrides;
 }
 
@@ -47,7 +48,7 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
     retirementAge, currentSalary, salaryGrowthRate,
-    high3Salary, yearsToProject, retirementType, pensionMultiplier
+    high3Salary, yearsToProject, retirementType, pensionMultiplier, survivorBenefitReduction
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
@@ -58,7 +59,7 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
   if (currentSalary <= 0) errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
   if (salaryGrowthRate < -100) errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
-
+  if (survivorBenefitReduction < 0) errors.push({ field: "survivorBenefitReduction", message: "Survivor Benefit Reductio cannot be negative"});
   const serviceStartAge = serviceStartYear - birthYear;
   if (serviceStartAge < 16) errors.push({ field: "serviceStartYear", message: "Must be at least 16 to start federal job" });
 
@@ -85,7 +86,7 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
     throw err;
   }
 
-  const { startYear, birthYear, retirementAge, yearsToProject, retirementType, colaPercent: defaultCola, pensionMultiplier, yearOverrides = {} } = input;
+  const { startYear, birthYear, retirementAge, yearsToProject, retirementType, colaPercent: defaultCola, pensionMultiplier, survivorBenefitReduction, yearOverrides = {} } = input;
   const retirementYear = birthYear + retirementAge;
   const endYear = startYear + yearsToProject;
 
@@ -104,6 +105,9 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
   else {  
     pension = high3 * (pensionMultiplier / 100) * yearsOfService * (1 - pensionReduction / 100);
   }
+
+  // Apply survivor benefit reduction (0, 0.05, 0.1)
+  pension *= 1 - (survivorBenefitReduction ?? 0);
 
   const rows: FersPensionProjectionRow[] = [];
 
