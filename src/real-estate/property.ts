@@ -38,6 +38,7 @@ export interface RealEstatePropertyProjectionRow {
   annualIncome: number;
   monthlyExpense: number;
   annualExpense: number;
+  netCashFlow: number;
   hasOverride?: boolean;
 }
 
@@ -200,6 +201,7 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
       annualIncome: rentalIncomeCurrent * 12,
       monthlyExpense: Math.round(totalAnnualExpense/12),
       annualExpense: Math.round(totalAnnualExpense),
+      netCashFlow: Math.round(rentalIncomeCurrent - totalAnnualExpense/12),
       hasOverride,
     });
   }
