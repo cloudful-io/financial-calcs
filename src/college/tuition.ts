@@ -1,7 +1,7 @@
 // --- Types ---
 export interface CollegeTuitionInput {
   startYear: number;
-  birthYear: number;
+  //birthYear: number;
   childBirthYear: number;
   childCollegeFirstYear: number;
   childCollegeLastYear: number;
@@ -15,7 +15,7 @@ export interface CollegeTuitionInput {
 
 export interface CollegeTuitionProjectionRow {
   year: number;
-  age: number;
+  //age: number;
   childAge: number;
   beginningBalance: number;
   contribution: number;
@@ -37,7 +37,7 @@ export function validateCollegeTuitionInput(
   
   const {
     startYear,
-    birthYear,
+    //birthYear,
     childBirthYear,
     childCollegeFirstYear,
     childCollegeLastYear,
@@ -50,8 +50,8 @@ export function validateCollegeTuitionInput(
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
-  if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
-  if (childBirthYear <= birthYear) errors.push({ field: "childBirthYear", message: "Child cannot be older than parent" });
+  //if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
+  //if (childBirthYear <= birthYear) errors.push({ field: "childBirthYear", message: "Child cannot be older than parent" });
   if (childCollegeFirstYear <= childBirthYear) errors.push({ field: "childCollegeFirstYear", message: "Child's first year of college must be later than birth year" });
   if (childCollegeLastYear < childCollegeFirstYear) errors.push({ field: "childCollegeLastYear", message: "Child's last year of college must be later than first year" });
   if (initialBalance <= 0) errors.push({ field: "initialBalance", message: "Initial balance cannot be negative" });
@@ -68,7 +68,7 @@ export function calculateCollegeTuitionProjection(
 ): CollegeTuitionProjectionRow[] {
   const {
     startYear,
-    birthYear,
+    //birthYear,
     childBirthYear,
     childCollegeFirstYear,
     childCollegeLastYear,
@@ -93,7 +93,7 @@ export function calculateCollegeTuitionProjection(
 
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
-    const age = year - birthYear;
+    //const age = year - birthYear;
     const childAge = year - childBirthYear;
     const beginningBalance = balance;
 
@@ -122,7 +122,7 @@ export function calculateCollegeTuitionProjection(
 
     data.push({
       year,
-      age,
+      //age,
       childAge,
       beginningBalance,
       contribution,
