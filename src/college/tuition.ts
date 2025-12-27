@@ -15,8 +15,8 @@ export interface CollegeTuitionInput {
 
 export interface CollegeTuitionProjectionRow {
   year: number;
-  //age: number;
-  childAge: number;
+  age: number;
+  //childAge: number;
   beginningBalance: number;
   contribution: number;
   yieldPercent: number;
@@ -94,7 +94,7 @@ export function calculateCollegeTuitionProjection(
   for (let i = 0; i < yearsToProject; i++) {
     const year = startYear + i;
     //const age = year - birthYear;
-    const childAge = year - childBirthYear;
+    const age = year - childBirthYear;
     const beginningBalance = balance;
 
     // Contribution stops after last college year
@@ -122,8 +122,8 @@ export function calculateCollegeTuitionProjection(
 
     data.push({
       year,
-      //age,
-      childAge,
+      age,
+      //childAge,
       beginningBalance,
       contribution,
       yieldPercent: estimatedYield,
