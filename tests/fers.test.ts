@@ -13,7 +13,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 2,
         colaPercent: 1,
         pensionMultiplier: 1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2050,
+        high3Salary: 100000,
         retirementType: 'regular'
       });
 
@@ -32,7 +35,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 3,
         colaPercent: 2,
         pensionMultiplier: 1.1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2052,
+        high3Salary: 100000,
         retirementType: 'regular',
       });
 
@@ -58,7 +64,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 2,
         colaPercent: 1,
         pensionMultiplier: 1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2048,
+        high3Salary: 100000,
         retirementType: 'mra10',
       });
 
@@ -79,7 +88,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 2,
         colaPercent: 1,
         pensionMultiplier: 1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2050,
+        high3Salary: 100000,
         retirementType: 'deferred',
       });
 
@@ -104,7 +116,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 3,
         colaPercent: 1,
         pensionMultiplier: 1.1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2062,
+        high3Salary: 100000,
         retirementType: 'regular',
       });
 
@@ -127,7 +142,10 @@ describe('FERS Projection', () => {
         salaryGrowthRate: 2,
         colaPercent: 2,
         pensionMultiplier: 1,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2050,
+        high3Salary: 100000,
         retirementType: 'regular',
       });
 
@@ -152,7 +170,10 @@ describe('FERS Projection', () => {
     salaryGrowthRate: 2,
     colaPercent: 1,
     pensionMultiplier: 1,
-    yearsToProject: 30,
+    lifeExpectancyAge: 85,
+    survivorBenefitReduction: 0,
+    serviceEndYear: 2050,
+    high3Salary: 100000,
   };
 
   describe('FERS Projection - Boundary and Edge Cases', () => {
@@ -168,7 +189,10 @@ describe('FERS Projection', () => {
         colaPercent: 1,
         pensionMultiplier: 1,
         retirementType: 'regular',
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2030,
+        high3Salary: 100000,
       })).toThrowError();
     });
 
@@ -183,7 +207,10 @@ describe('FERS Projection', () => {
         colaPercent: 1,
         pensionMultiplier: 1,
         retirementType: 'mra10',
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2036,
+        high3Salary: 100000,
     });
     const retirementRow = result.find(r => r.age === 57);
     expect(retirementRow).toBeDefined();
@@ -201,7 +228,10 @@ describe('FERS Projection', () => {
       colaPercent: 1,
       pensionMultiplier: 1.1,
       retirementType: 'regular',
-      yearsToProject: 30,
+      lifeExpectancyAge: 85,
+      survivorBenefitReduction: 0,
+      serviceEndYear: 2050,
+      high3Salary: 100000,
     });
     const retirementRow = result.find(r => r.age === 70);
     expect(retirementRow).toBeDefined();
@@ -219,7 +249,10 @@ describe('FERS Projection', () => {
       colaPercent: 1,
       pensionMultiplier: 1.1,
       retirementType: 'regular',
-      yearsToProject: 30,
+      lifeExpectancyAge: 85,
+      survivorBenefitReduction: 0,
+      serviceEndYear: 2020,
+      high3Salary: 100000,
     })).toThrow();
   });
 
@@ -234,7 +267,10 @@ describe('FERS Projection', () => {
       colaPercent: 1,
       pensionMultiplier: 1.1,
       retirementType: 'regular',
-      yearsToProject: 50,
+      lifeExpectancyAge: 85,
+      survivorBenefitReduction: 0,
+      serviceEndYear: 2010,
+      high3Salary: 100000,
     });
     const lastRow = result[result.length - 1];
     expect(lastRow.age).toBeGreaterThanOrEqual(100);
@@ -252,34 +288,10 @@ describe('FERS Projection', () => {
       colaPercent: 1,
       pensionMultiplier: 1.1,
       retirementType: 'regular',
-      yearsToProject: 50,
-    })).toThrow();
-  });
-
-  it('throws if yearsToProject is zero or negative', () => {
-    expect(() => calculateFersPensionProjection({
-      startYear: 2025,
-      birthYear: 1970,
-      serviceStartYear: 1980,
-      retirementAge: 60, 
-      currentSalary: 100000,
-      salaryGrowthRate: 2,
-      colaPercent: 1,
-      pensionMultiplier: 1.1,
-      retirementType: 'regular',
-      yearsToProject: 0,
-    })).toThrow();
-    expect(() => calculateFersPensionProjection({
-      startYear: 2025,
-      birthYear: 1970,
-      serviceStartYear: 1980,
-      retirementAge: 60, 
-      currentSalary: 100000,
-      salaryGrowthRate: 2,
-      colaPercent: 1,
-      pensionMultiplier: 1.1,
-      retirementType: 'regular',
-      yearsToProject: -5,
+      lifeExpectancyAge: 85,
+        survivorBenefitReduction: 0,
+        serviceEndYear: 2040,
+        high3Salary: 100000,
     })).toThrow();
   });
 });

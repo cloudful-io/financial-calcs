@@ -8,7 +8,7 @@ export interface RetirementSavingsInput {
   estimatedWithdrawRate: number;     
   contributionIncreaseRate: number;  
   withdrawStartAge: number;
-  yearsToProject: number;
+  lifeExpectancyAge: number;
   yearOverrides?: RetirementSavingsYearOverrides;
 }
 
@@ -53,7 +53,7 @@ export function validateRetirementSavingsInput(
     estimatedWithdrawRate,
     contributionIncreaseRate,
     withdrawStartAge,
-    yearsToProject,
+    lifeExpectancyAge,
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
@@ -64,7 +64,8 @@ export function validateRetirementSavingsInput(
   if (estimatedWithdrawRate < 0) errors.push({ field: "estimatedWithdrawRate", message: "Withdrawal rate cannot be negative" });
   if (contributionIncreaseRate < -100) errors.push({ field: "contributionIncreaseRate", message: "Contribution increase rate cannot be less than -100%" });
   if (withdrawStartAge < 0 || withdrawStartAge > 80) errors.push({ field: "withdrawStartAge", message: "Withdraw start age must be between 0 and 80" });
-  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
+  if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
 
   return errors;
 }
@@ -86,7 +87,7 @@ export function calculateRetirementSavingsProjectionWithOverrides(
     estimatedWithdrawRate,
     contributionIncreaseRate,
     withdrawStartAge,
-    yearsToProject,
+    lifeExpectancyAge,
     yearOverrides = {}
   } = input;
 
@@ -99,7 +100,8 @@ export function calculateRetirementSavingsProjectionWithOverrides(
 
   let balance = Math.max(initialBalance, 0);
   let contribution = Math.max(initialContribution, 0);
-
+  const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
+  
   const rows: RetirementSavingsProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {

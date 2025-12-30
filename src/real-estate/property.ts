@@ -12,7 +12,7 @@ export interface RealEstatePropertyInput {
   hoaFeeIncreaseRate: number;
   monthlyRentalIncome?: number;
   rentalIncomeIncreaseRate?: number;
-  yearsToProject: number;
+  lifeExpectancyAge: number;
   yearOverrides?: RealEstatePropertyYearOverrides;
 }
 
@@ -53,13 +53,14 @@ export function validateRealEstatePropertyInput(
   const errors: RealEstatePropertyValidationError[] = [];
   const {
     startYear,
+    birthYear,
     monthlyMortgage,
     mortgageEndYear,
     annualPropertyTax,
     annualInsurance,
     propertyTaxIncreaseRate,
     insuranceIncreaseRate,
-    yearsToProject
+    lifeExpectancyAge
   } = input;
 
   if (startYear < 1900)
@@ -98,12 +99,18 @@ export function validateRealEstatePropertyInput(
       message: "Insurance increase rate cannot be negative",
     });
 
-  if (yearsToProject <= 0)
+  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) 
     errors.push({
-      field: "yearsToProject",
-      message: "Must project at least 1 year",
+      field: "lifeExpectancyAge", 
+      message: "Life Expectancy Age must be between 0 and 150",
     });
 
+  if ((birthYear+lifeExpectancyAge) < startYear) 
+    errors.push({
+      field: "lifeExpectancyAge", 
+      message: "Life Expectancy Age must be after Start Year",
+    });
+  
   return errors;
 }
 
@@ -127,7 +134,7 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
     hoaFeeIncreaseRate,
     monthlyRentalIncome,
     rentalIncomeIncreaseRate = 0,
-    yearsToProject,
+    lifeExpectancyAge,
     yearOverrides = {},
   } = input;
 
@@ -145,6 +152,7 @@ export function calculateRealEstatePropertyProjectionWithOverrides(
   let hoaCurrent = monthlyHoaFee;
   let rentalIncomeCurrent = monthlyRentalIncome;
 
+  const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
   const rows: RealEstatePropertyProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {

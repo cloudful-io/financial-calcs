@@ -6,7 +6,7 @@ export interface MilitaryPensionInput {
   serviceEndYear: number;
   high3Salary: number;
   colaPercent: number;
-  yearsToProject: number;
+  lifeExpectancyAge: number;
   retirementType: 'high3' | 'brs';
   yearOverrides?: MilitaryPensionYearOverrides;
 }
@@ -37,7 +37,7 @@ export function validateMilitaryPensionInput(input: MilitaryPensionInput): Milit
   const errors: MilitaryPensionValidationError[] = [];
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
-    high3Salary, yearsToProject, retirementType
+    high3Salary, lifeExpectancyAge, retirementType
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
@@ -45,7 +45,9 @@ export function validateMilitaryPensionInput(input: MilitaryPensionInput): Milit
   if (serviceStartYear < 1900) errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be before 1900" });
   if (serviceEndYear < 1900) errors.push({ field: "serviceEndYear", message: "Service End Year cannot be before 1900" });
   if (serviceStartYear > serviceEndYear) errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be after Service End Year" });
-  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
+  if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
+  
   if (high3Salary <= 0) errors.push({ field: "high3Salary", message: "High-3 Salary cannot be negative" });
 
   const serviceStartAge = serviceStartYear - birthYear;
@@ -71,8 +73,9 @@ export function calculateMilitaryPensionProjectionWithOverrides(input: MilitaryP
     throw err;
   }
 
-  const { startYear, birthYear, yearsToProject, serviceStartYear, serviceEndYear, high3Salary, retirementType, colaPercent: defaultCola, yearOverrides = {} } = input;
+  const { startYear, birthYear, lifeExpectancyAge, serviceStartYear, serviceEndYear, high3Salary, retirementType, colaPercent: defaultCola, yearOverrides = {} } = input;
   const retirementYear = serviceEndYear;
+  const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
   const endYear = startYear + yearsToProject;
 
   const yearsOfService = serviceEndYear - serviceStartYear;

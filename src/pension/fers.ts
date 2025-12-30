@@ -12,7 +12,6 @@ export interface FersPensionInput {
   colaPercent: number;
   pensionMultiplier: number;
   lifeExpectancyAge: number;
-  //yearsToProject: number;
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
   survivorBenefitReduction: number;
   yearOverrides?: FersPensionYearOverrides;
@@ -59,7 +58,6 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   if (retirementAge < 40 || retirementAge > 80) errors.push({ field: "retirementAge", message: "Retirement Age must be between 40 and 80" });
   if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
   if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
-  //if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
   if (currentSalary <= 0) errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
   if (salaryGrowthRate < -100) errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
   if (survivorBenefitReduction < 0) errors.push({ field: "survivorBenefitReduction", message: "Survivor Benefit Reductio cannot be negative"});

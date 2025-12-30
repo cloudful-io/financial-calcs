@@ -10,13 +10,11 @@ export interface CollegeTuitionInput {
   estimatedYield: number;               // percent per year
   estimatedFirstYearTuition: number;     
   estimatedInflationRate: number;       // percent per year
-  yearsToProject: number;
 }
 
 export interface CollegeTuitionProjectionRow {
   year: number;
   age: number;
-  //childAge: number;
   beginningBalance: number;
   contribution: number;
   yieldPercent: number;
@@ -37,7 +35,6 @@ export function validateCollegeTuitionInput(
   
   const {
     startYear,
-    //birthYear,
     childBirthYear,
     childCollegeFirstYear,
     childCollegeLastYear,
@@ -46,19 +43,15 @@ export function validateCollegeTuitionInput(
     estimatedYield,
     estimatedFirstYearTuition,
     estimatedInflationRate,
-    yearsToProject
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
-  //if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
-  //if (childBirthYear <= birthYear) errors.push({ field: "childBirthYear", message: "Child cannot be older than parent" });
   if (childCollegeFirstYear <= childBirthYear) errors.push({ field: "childCollegeFirstYear", message: "Child's first year of college must be later than birth year" });
   if (childCollegeLastYear < childCollegeFirstYear) errors.push({ field: "childCollegeLastYear", message: "Child's last year of college must be later than first year" });
   if (initialBalance <= 0) errors.push({ field: "initialBalance", message: "Initial balance cannot be negative" });
   if (estimatedYield < -100) errors.push({ field: "estimatedYield", message: "Estimated yield cannot be less than -100%" });
   if (estimatedFirstYearTuition <= 0) errors.push({ field: "estimatedFirstYearTuition", message: "Estimated first year tuition must be greater than zero" });
   if (estimatedInflationRate < -100) errors.push({ field: "estimatedInflationRate", message: "Estimated tuition inflation cannot be less than -100%" });
-  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
 
   return errors;
 }
@@ -68,7 +61,6 @@ export function calculateCollegeTuitionProjection(
 ): CollegeTuitionProjectionRow[] {
   const {
     startYear,
-    //birthYear,
     childBirthYear,
     childCollegeFirstYear,
     childCollegeLastYear,
@@ -77,7 +69,6 @@ export function calculateCollegeTuitionProjection(
     estimatedYield,
     estimatedFirstYearTuition,
     estimatedInflationRate,
-    yearsToProject,
   } = input;
 
   const errors = validateCollegeTuitionInput(input);
@@ -88,6 +79,7 @@ export function calculateCollegeTuitionProjection(
     throw err;
   }
   
+  const yearsToProject = childCollegeLastYear - startYear + 2;
   let balance = initialBalance;
   const data: CollegeTuitionProjectionRow[] = [];
 

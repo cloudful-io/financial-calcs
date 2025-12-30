@@ -5,7 +5,7 @@ export interface SocialSecurityBenefitInput {
   claimingAge: number;
   averageIncome: number;   
   averageCOLA: number;     
-  yearsToProject: number;
+  lifeExpectancyAge: number;
   yearOverrides?: SocialSecurityBenefitYearOverrides;
 }
 
@@ -33,14 +33,15 @@ export function validateSocialSecurityBenefitInput(
   input: SocialSecurityBenefitInput
 ): SocialSecurityValidationError[] {
   const errors: SocialSecurityValidationError[] = [];
-  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject } = input;
+  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, lifeExpectancyAge } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
   if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
   if (claimingAge < 62) errors.push({ field: "claimingAge", message: "Must be at least 62 to claim Social Security benefits" });
   if (averageIncome <= 0) errors.push({ field: "averageIncome", message: "Average income cannot be negative" });
   if (averageCOLA < 0) errors.push({ field: "averageCOLA", message: "Average COLA cannot be negative" });
-  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
+  if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
 
   return errors;
 }
@@ -53,7 +54,7 @@ export function calculateSocialSecurityBenefitProjection(input: SocialSecurityBe
 export function calculateSocialSecurityBenefitProjectionWithOverrides(
   input: SocialSecurityBenefitInput
 ): SocialSecurityBenefitProjectionRow[] {
-  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, yearsToProject, yearOverrides = {} } = input;
+  const { startYear, birthYear, claimingAge, averageIncome, averageCOLA, lifeExpectancyAge, yearOverrides = {} } = input;
 
   const errors = validateSocialSecurityBenefitInput(input);
     
@@ -63,6 +64,7 @@ export function calculateSocialSecurityBenefitProjectionWithOverrides(
     throw err;
   }
 
+  const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
   const fullRetirementAge = getFullRetirementAge(birthYear);
   const claimingYear = birthYear + claimingAge;
 
