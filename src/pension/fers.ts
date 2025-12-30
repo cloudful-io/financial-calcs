@@ -11,7 +11,8 @@ export interface FersPensionInput {
   high3Salary: number;
   colaPercent: number;
   pensionMultiplier: number;
-  yearsToProject: number;
+  lifeExpectancyAge: number;
+  //yearsToProject: number;
   retirementType: 'regular' | 'mra10' | 'early' | 'deferred';
   survivorBenefitReduction: number;
   yearOverrides?: FersPensionYearOverrides;
@@ -48,7 +49,7 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   const {
     startYear, birthYear, serviceStartYear, serviceEndYear,
     retirementAge, currentSalary, salaryGrowthRate,
-    high3Salary, yearsToProject, retirementType, pensionMultiplier, survivorBenefitReduction
+    high3Salary, lifeExpectancyAge, /*yearsToProject,*/ retirementType, pensionMultiplier, survivorBenefitReduction
   } = input;
 
   if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
@@ -56,7 +57,9 @@ export function validateFersPensionInput(input: FersPensionInput): FersPensionVa
   if (serviceStartYear < 1900) errors.push({ field: "serviceStartYear", message: "Service Start Year cannot be before 1900" });
   if (serviceEndYear < 1900) errors.push({ field: "serviceEndYear", message: "Service End Year cannot be before 1900" });
   if (retirementAge < 40 || retirementAge > 80) errors.push({ field: "retirementAge", message: "Retirement Age must be between 40 and 80" });
-  if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
+  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
+  if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
+  //if (yearsToProject <= 0) errors.push({ field: "yearsToProject", message: "Must project at least 1 year" });
   if (currentSalary <= 0) errors.push({ field: "currentSalary", message: "Salary cannot be negative" });
   if (salaryGrowthRate < -100) errors.push({ field: "salaryGrowthRate", message: "Growth rate cannot be less than -100%" });
   if (survivorBenefitReduction < 0) errors.push({ field: "survivorBenefitReduction", message: "Survivor Benefit Reductio cannot be negative"});
@@ -86,8 +89,9 @@ export function calculateFersPensionProjectionWithOverrides(input: FersPensionIn
     throw err;
   }
 
-  const { startYear, birthYear, retirementAge, yearsToProject, retirementType, colaPercent: defaultCola, pensionMultiplier, survivorBenefitReduction, yearOverrides = {} } = input;
+  const { startYear, birthYear, retirementAge, lifeExpectancyAge, retirementType, colaPercent: defaultCola, pensionMultiplier, survivorBenefitReduction, yearOverrides = {} } = input;
   const retirementYear = birthYear + retirementAge;
+  const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
   const endYear = startYear + yearsToProject;
 
   const salaryMap = calculateSalaryHistory(input);
