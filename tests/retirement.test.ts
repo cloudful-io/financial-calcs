@@ -13,10 +13,10 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 2,
         withdrawStartAge: 60,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
-      expect(result.length).toBe(30);
+      expect(result.length).toBe(41);
       expect(result[0].endingBalance).toBeCloseTo(126_000, -2);
       expect(result.at(-1)!.endingBalance).toBeGreaterThan(1_000_000); // should accumulate over time
     });
@@ -31,7 +31,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 4,
         contributionIncreaseRate: 0,
         withdrawStartAge: 60,
-        yearsToProject: 20,
+        lifeExpectancyAge: 85,
       });
 
       const age60Index = result.findIndex(r => r.age === 60);
@@ -54,7 +54,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 70,
-        yearsToProject: 20,
+        lifeExpectancyAge: 85,
       });
 
       expect(result[0].endingBalance).toBeCloseTo(52_500, -1);
@@ -71,10 +71,10 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 70,
-        yearsToProject: 10,
+        lifeExpectancyAge: 50,
       });
 
-      const expectedFinal = 20_000 + 10_000 * 10;
+      const expectedFinal = 20_000 + 10_000 * 11;
       expect(result.at(-1)!.endingBalance).toBe(expectedFinal);
     });
 
@@ -88,7 +88,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 10, // very high withdrawal rate
         contributionIncreaseRate: 0,
         withdrawStartAge: 65,
-        yearsToProject: 20,
+        lifeExpectancyAge: 85,
       });
 
       const last = result.at(-1)!;
@@ -107,7 +107,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 65,
-        yearsToProject: 5,
+        lifeExpectancyAge: 85,
       });
 
       expect(result[0].beginningBalance).toBe(0);
@@ -123,7 +123,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 65,
-        yearsToProject: 5,
+        lifeExpectancyAge: 85,
       });
 
       // Contributions should not decrease the balance
@@ -140,7 +140,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 70,
-        yearsToProject: 3,
+        lifeExpectancyAge: 85,
       });
 
       expect(result[0].endingBalance).toBeLessThan(100_000);
@@ -158,7 +158,7 @@ describe('Retirement Savings Projection', () => {
           estimatedWithdrawRate: -4, // invalid
           contributionIncreaseRate: 0,
           withdrawStartAge: 65,
-          yearsToProject: 10,
+          lifeExpectancyAge: 85,
         })
       ).toThrowError();
     });
@@ -173,14 +173,14 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: -10, // contributions shrink each year
         withdrawStartAge: 70,
-        yearsToProject: 3,
+        lifeExpectancyAge: 85,
       });
 
       expect(result[0].contribution).toBe(10_000);
       expect(result[1].contribution).toBeLessThan(10_000);
       expect(result[2].contribution).toBeLessThan(result[1].contribution);
     });
-    it('throws if yearsToProject is zero or negative', () => {
+    it('throws if life expectancy age is more than 150', () => {
       expect(() => calculateRetirementSavingsProjection({
         startYear: 2025,
         birthYear: 1980,
@@ -190,7 +190,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 0,
         contributionIncreaseRate: 0,
         withdrawStartAge: 65,
-        yearsToProject: 0,
+        lifeExpectancyAge: 151,
       })).toThrow();
     });
   });
@@ -205,7 +205,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 4,
         contributionIncreaseRate: 0,
         withdrawStartAge: 60, // already past
-        yearsToProject: 5,
+        lifeExpectancyAge: 85,
       });
 
       expect(result[0].contribution).toBe(0); // no contributions
@@ -222,7 +222,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 4,
         contributionIncreaseRate: 0,
         withdrawStartAge: 90, // beyond projection horizon
-        yearsToProject: 20,   // projects only until age 45
+        lifeExpectancyAge: 85,
       });
 
       expect(result.every(r => r.monthlyWithdraw === 0)).toBe(true);
@@ -239,7 +239,7 @@ describe('Retirement Savings Projection', () => {
         estimatedWithdrawRate: 4,
         contributionIncreaseRate: 0,
         withdrawStartAge: 65, // matches last projection year
-        yearsToProject: 10,   // age 45 to 55
+        lifeExpectancyAge: 65,
       });
 
       const lastRow = result.at(-1)!;

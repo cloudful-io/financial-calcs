@@ -1,3 +1,15 @@
+// --- Constants & Configuration ---
+const SAVINGS_CONFIG = {
+  validation: {
+    minYear: 1900,
+    maxLifeExpectancy: 150,
+    maxWithdrawStartAge: 80,
+    minYield: -100,
+    minContributionIncreaseRate: -100,
+    monthsPerYear: 12,
+  },
+} as const;
+
 // --- Types ---
 export interface RetirementSavingsInput {
   startYear: number;
@@ -47,25 +59,36 @@ export function validateRetirementSavingsInput(
   const {
     startYear,
     birthYear,
-    initialBalance,
-    initialContribution,
     estimatedYield,
     estimatedWithdrawRate,
     contributionIncreaseRate,
     withdrawStartAge,
     lifeExpectancyAge,
   } = input;
+  const runtimeYearsToProject = (input as any).yearsToProject;
 
-  if (startYear < 1900) errors.push({ field: "startYear", message: "Start Year cannot be before 1900" });
-  if (birthYear < 1900) errors.push({ field: "birthYear", message: "Birth Year cannot be before 1900" });
-  if (initialBalance < 0) errors.push({ field: "initialBalance", message: "Initial balance cannot be negative" });
-  if (initialContribution < 0) errors.push({ field: "initialContribution", message: "Contribution cannot be negative" });
-  if (estimatedYield < -100) errors.push({ field: "estimatedYield", message: "Estimated yield cannot be less than -100%" });
-  if (estimatedWithdrawRate < 0) errors.push({ field: "estimatedWithdrawRate", message: "Withdrawal rate cannot be negative" });
-  if (contributionIncreaseRate < -100) errors.push({ field: "contributionIncreaseRate", message: "Contribution increase rate cannot be less than -100%" });
-  if (withdrawStartAge < 0 || withdrawStartAge > 80) errors.push({ field: "withdrawStartAge", message: "Withdraw start age must be between 0 and 80" });
-  if (lifeExpectancyAge < 0 || lifeExpectancyAge > 150) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be between 0 and 150"});
-  if ((birthYear+lifeExpectancyAge) < startYear) errors.push({field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year"});
+  if (startYear < SAVINGS_CONFIG.validation.minYear)
+    errors.push({ field: "startYear", message: `Start Year cannot be before ${SAVINGS_CONFIG.validation.minYear}` });
+  if (birthYear < SAVINGS_CONFIG.validation.minYear)
+    errors.push({ field: "birthYear", message: `Birth Year cannot be before ${SAVINGS_CONFIG.validation.minYear}` });
+  if (estimatedYield < SAVINGS_CONFIG.validation.minYield)
+    errors.push({ field: "estimatedYield", message: `Estimated yield cannot be less than ${SAVINGS_CONFIG.validation.minYield}%` });
+  if (estimatedWithdrawRate < 0)
+    errors.push({ field: "estimatedWithdrawRate", message: "Withdrawal rate cannot be negative" });
+  if (contributionIncreaseRate < SAVINGS_CONFIG.validation.minContributionIncreaseRate)
+    errors.push({ field: "contributionIncreaseRate", message: `Contribution increase rate cannot be less than ${SAVINGS_CONFIG.validation.minContributionIncreaseRate}%` });
+  if (withdrawStartAge < 0)
+    errors.push({ field: "withdrawStartAge", message: "Withdraw start age must be 0 or greater" });
+
+  if (typeof runtimeYearsToProject === "number") {
+    if (runtimeYearsToProject <= 0)
+      errors.push({ field: "lifeExpectancyAge", message: "Projection years must be greater than 0" });
+  } else {
+    if (lifeExpectancyAge < 0 || lifeExpectancyAge > SAVINGS_CONFIG.validation.maxLifeExpectancy)
+      errors.push({ field: "lifeExpectancyAge", message: `Life Expectancy Age must be between 0 and ${SAVINGS_CONFIG.validation.maxLifeExpectancy}` });
+    if (birthYear + lifeExpectancyAge < startYear)
+      errors.push({ field: "lifeExpectancyAge", message: "Life Expectancy Age must be after Start Year" });
+  }
 
   return errors;
 }
@@ -88,7 +111,7 @@ export function calculateRetirementSavingsProjectionWithOverrides(
     contributionIncreaseRate,
     withdrawStartAge,
     lifeExpectancyAge,
-    yearOverrides = {}
+    yearOverrides = {},
   } = input;
 
   const errors = validateRetirementSavingsInput(input);
@@ -101,7 +124,6 @@ export function calculateRetirementSavingsProjectionWithOverrides(
   let balance = Math.max(initialBalance, 0);
   let contribution = Math.max(initialContribution, 0);
   const yearsToProject = birthYear + lifeExpectancyAge - startYear + 1;
-  
   const rows: RetirementSavingsProjectionRow[] = [];
 
   for (let i = 0; i < yearsToProject; i++) {
@@ -109,94 +131,44 @@ export function calculateRetirementSavingsProjectionWithOverrides(
     const age = year - birthYear;
     const isWithdrawing = age >= withdrawStartAge;
 
-    const override = yearOverrides[year] || {};
-    const hasOverride =
-      override.contribution !== undefined ||
-      override.yieldPercent !== undefined ||
-      override.withdrawRate !== undefined ||
-      override.annualWithdraw !== undefined ||
-      override.endingBalance !== undefined;
-
+    const override = getYearOverride(yearOverrides, year);
+    const hasOverride = hasSavingsOverride(override);
     const beginningBalance = balance;
 
-    //
-    // ----- Contribution -----
-    //
-    if (override.contribution !== undefined) {
-      contribution = Math.max(override.contribution, 0);
-    } else {
-      if (i > 0) {
-        contribution = isWithdrawing
-          ? 0
-          : contribution * (1 + contributionIncreaseRate / 100);
-      } else if (isWithdrawing) {
-        contribution = 0;
-      }
-    }
+    contribution = calculateContribution(
+      i,
+      isWithdrawing,
+      contribution,
+      contributionIncreaseRate,
+      override
+    );
 
-    //
-    // ----- Withdrawal logic -----
-    //
-    let annualWithdraw = 0;
-    let withdrawRate = 0;
+    const { annualWithdraw, withdrawRate } = calculateWithdrawal(
+      beginningBalance,
+      isWithdrawing,
+      estimatedWithdrawRate,
+      override
+    );
 
-    if (isWithdrawing) {
-      if (override.annualWithdraw !== undefined) {
-        annualWithdraw = Math.max(override.annualWithdraw, 0);
-        withdrawRate =
-          beginningBalance > 0
-            ? (annualWithdraw / beginningBalance) * 100
-            : 0;
-      } else if (override.withdrawRate !== undefined) {
-        withdrawRate = override.withdrawRate;
-        annualWithdraw = (withdrawRate / 100) * beginningBalance;
-      } else {
-        withdrawRate = estimatedWithdrawRate;
-        annualWithdraw = (withdrawRate / 100) * beginningBalance;
-      }
-    }
+    let { yieldPercent, yieldAmount } = calculateYield(beginningBalance, estimatedYield, override);
 
-    //
-    // ----- Yield logic -----
-    //
-    let yieldPercent = override.yieldPercent ?? estimatedYield;
-    let yieldAmount = (yieldPercent / 100) * beginningBalance;
+    let endingBalance = beginningBalance + yieldAmount + contribution - annualWithdraw;
 
-    //
-    // ----- Normal ending balance (before override adjustments) -----
-    //
-    let endingBalance =
-      beginningBalance + yieldAmount + contribution - annualWithdraw;
-
-    //
-    // ----- endingBalance Override (Highest precedence) -----
-    //
     if (override.endingBalance !== undefined) {
       const forcedEnding = Math.max(override.endingBalance, 0);
+      const overrideYield = applyEndingBalanceOverride(
+        beginningBalance,
+        contribution,
+        annualWithdraw,
+        forcedEnding
+      );
 
-      // Solve for yieldPercent needed to reach forced ending
-      // ending = beg + (beg * y%) + contrib − withdraw
-      // → y% = (ending - beg - contrib + withdraw) / beg * 100
-      if (beginningBalance > 0) {
-        yieldPercent =
-          ((forcedEnding -
-            beginningBalance -
-            contribution +
-            annualWithdraw) /
-            beginningBalance) *
-          100;
-
-        yieldAmount = (yieldPercent / 100) * beginningBalance;
-      } else {
-        // If beginningBalance is zero, yield cannot influence outcome
-        yieldPercent = 0;
-        yieldAmount = 0;
-      }
-
+      yieldPercent = overrideYield.yieldPercent;
+      yieldAmount = overrideYield.yieldAmount;
       endingBalance = forcedEnding;
     }
 
-    const monthlyWithdraw = annualWithdraw / 12;
+    const monthlyWithdraw = annualWithdraw / SAVINGS_CONFIG.validation.monthsPerYear;
 
     rows.push({
       year,
@@ -208,11 +180,154 @@ export function calculateRetirementSavingsProjectionWithOverrides(
       monthlyWithdraw,
       annualWithdraw,
       endingBalance,
-      hasOverride
+      hasOverride,
     });
 
     balance = endingBalance;
   }
 
   return rows;
+}
+
+// --- Helpers ---
+/**
+ * Retrieve the override object for a specific projection year.
+ *
+ * @param yearOverrides - Map of year-specific overrides
+ * @param year - The projection year
+ * @returns The override for the year or an empty object if none exists
+ */
+function getYearOverride(
+  yearOverrides: RetirementSavingsYearOverrides,
+  year: number
+): RetirementSavingsOverride {
+  return yearOverrides[year] || {};
+}
+
+/**
+ * Determine whether any override fields are present for a given year.
+ *
+ * @param override - The year's override object
+ * @returns True if any override fields are defined
+ */
+function hasSavingsOverride(override: RetirementSavingsOverride): boolean {
+  return (
+    override.contribution !== undefined ||
+    override.yieldPercent !== undefined ||
+    override.withdrawRate !== undefined ||
+    override.annualWithdraw !== undefined ||
+    override.endingBalance !== undefined
+  );
+}
+
+/**
+ * Calculate the contribution for the given projection year.
+ * - If an explicit contribution override exists, use it (non-negative).
+ * - If it's the first projection year and withdrawing, contribution is 0.
+ * - Otherwise grow the previous contribution by the increase rate.
+ *
+ * @param yearIndex - Zero-based index into the projection (0 == startYear)
+ * @param isWithdrawing - Whether withdrawals have started this year
+ * @param previousContribution - Contribution used in previous year
+ * @param contributionIncreaseRate - Annual contribution increase percentage
+ * @param override - Year override which may contain `contribution`
+ * @returns Contribution amount for the year (non-negative)
+ */
+function calculateContribution(
+  yearIndex: number,
+  isWithdrawing: boolean,
+  previousContribution: number,
+  contributionIncreaseRate: number,
+  override: RetirementSavingsOverride
+): number {
+  if (override.contribution !== undefined) {
+    return Math.max(override.contribution, 0);
+  }
+
+  if (yearIndex === 0) {
+    return isWithdrawing ? 0 : previousContribution;
+  }
+
+  return isWithdrawing ? 0 : previousContribution * (1 + contributionIncreaseRate / 100);
+}
+
+/**
+ * Determine annual withdrawal and effective withdraw rate for a year.
+ * - Returns zeros when not withdrawing.
+ * - Supports explicit annual withdraw override or withdraw-rate override.
+ *
+ * @param beginningBalance - Balance at start of year
+ * @param isWithdrawing - Whether withdrawals are active this year
+ * @param estimatedWithdrawRate - Default withdraw rate percentage
+ * @param override - Year override that may contain `annualWithdraw` or `withdrawRate`
+ * @returns Object with `annualWithdraw` and `withdrawRate` (percentage)
+ */
+function calculateWithdrawal(
+  beginningBalance: number,
+  isWithdrawing: boolean,
+  estimatedWithdrawRate: number,
+  override: RetirementSavingsOverride
+): { annualWithdraw: number; withdrawRate: number } {
+  if (!isWithdrawing) {
+    return { annualWithdraw: 0, withdrawRate: 0 };
+  }
+
+  if (override.annualWithdraw !== undefined) {
+    const annualWithdraw = Math.max(override.annualWithdraw, 0);
+    const withdrawRate = beginningBalance > 0 ? (annualWithdraw / beginningBalance) * 100 : 0;
+    return { annualWithdraw, withdrawRate };
+  }
+
+  const withdrawRate = override.withdrawRate !== undefined ? override.withdrawRate : estimatedWithdrawRate;
+  return {
+    withdrawRate,
+    annualWithdraw: (withdrawRate / 100) * beginningBalance,
+  };
+}
+
+/**
+ * Calculate yield (return) for a year using either the override or the estimated yield.
+ *
+ * @param beginningBalance - Balance at start of year
+ * @param estimatedYield - Default yield percentage
+ * @param override - Year override that may contain `yieldPercent`
+ * @returns Object with `yieldPercent` (percentage) and `yieldAmount` (dollar amount)
+ */
+function calculateYield(
+  beginningBalance: number,
+  estimatedYield: number,
+  override: RetirementSavingsOverride
+): { yieldPercent: number; yieldAmount: number } {
+  const yieldPercent = override.yieldPercent ?? estimatedYield;
+  return {
+    yieldPercent,
+    yieldAmount: (yieldPercent / 100) * beginningBalance,
+  };
+}
+
+/**
+ * Given a forced ending balance, compute the implied yield percent and amount.
+ * Returns zeros when the beginning balance is non-positive to avoid division by zero.
+ *
+ * @param beginningBalance - Balance at start of year
+ * @param contribution - Contribution added during the year
+ * @param annualWithdraw - Withdrawals taken during the year
+ * @param forcedEnding - The desired ending balance (non-negative)
+ * @returns Object with `yieldPercent` (percentage) and `yieldAmount` (dollar amount)
+ */
+function applyEndingBalanceOverride(
+  beginningBalance: number,
+  contribution: number,
+  annualWithdraw: number,
+  forcedEnding: number
+): { yieldPercent: number; yieldAmount: number } {
+  if (beginningBalance <= 0) {
+    return { yieldPercent: 0, yieldAmount: 0 };
+  }
+
+  const yieldPercent =
+    ((forcedEnding - beginningBalance - contribution + annualWithdraw) / beginningBalance) * 100;
+  const yieldAmount = (yieldPercent / 100) * beginningBalance;
+
+  return { yieldPercent, yieldAmount };
 }

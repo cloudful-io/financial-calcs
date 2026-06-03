@@ -70,18 +70,13 @@ export function calculateMortgageAmortization(
   const monthlyRate = annualRate / 100 / 12;
   const totalMonths = termYears * 12;
 
-  const basePayment =
-    monthlyRate === 0
-      ? loanAmount / totalMonths
-      : loanAmount *
-        (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) /
-        (Math.pow(1 + monthlyRate, totalMonths) - 1);
+  const basePayment = computeMonthlyPayment(loanAmount, monthlyRate, totalMonths);
 
   let balance = loanAmount;
   const data: AmortizationRow[] = [];
 
   for (let i = 1; balance > 0.01 && i <= totalMonths; i++) {
-    const interest = balance * monthlyRate;
+    const interest = computeInterest(balance, monthlyRate);
     const principal = Math.min(basePayment + extraPayment - interest, balance);
     balance -= principal;
 
@@ -136,4 +131,24 @@ export function groupByYear(
   });
 
   return Object.values(yearlyMap);
+}
+
+// --- Helpers: payment math ---
+/**
+ * Compute the fixed monthly payment for an amortizing loan.
+ * Uses standard annuity formula; handles zero-rate (interest-free) case.
+ */
+function computeMonthlyPayment(loanAmount: number, monthlyRate: number, totalMonths: number): number {
+  if (monthlyRate === 0) return loanAmount / totalMonths;
+  return (
+    loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) /
+    (Math.pow(1 + monthlyRate, totalMonths) - 1)
+  );
+}
+
+/**
+ * Compute monthly interest on the current balance.
+ */
+function computeInterest(balance: number, monthlyRate: number): number {
+  return balance * monthlyRate;
 }

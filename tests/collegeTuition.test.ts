@@ -7,7 +7,6 @@ import {
 describe("calculateCollegeTuitionProjection", () => {
   const baseInput: CollegeTuitionInput = {
     startYear: 2025,
-    birthYear: 1980,
     childBirthYear: 2010,
     childCollegeFirstYear: 2028,
     childCollegeLastYear: 2031,
@@ -16,13 +15,12 @@ describe("calculateCollegeTuitionProjection", () => {
     estimatedYield: 5,
     estimatedFirstYearTuition: 20000,
     estimatedInflationRate: 3,
-    yearsToProject: 10,
   };
 
   // --- Happy Path ---
   it("should project correct number of years", () => {
     const result = calculateCollegeTuitionProjection(baseInput);
-    expect(result.length).toBe(baseInput.yearsToProject);
+    expect(result.length).toBe(baseInput.childCollegeLastYear - baseInput.startYear + 2); // +2 to include last year and one extra year after
   });
 
   it("should grow balance with contributions and yield before tuition years", () => {
@@ -55,16 +53,6 @@ describe("calculateCollegeTuitionProjection", () => {
   });
 
   // --- Boundary / Error Cases ---
-  it("should throw if yearsToProject <= 0", () => {
-    const input = { ...baseInput, yearsToProject: 0 };
-    expect(() => calculateCollegeTuitionProjection(input)).toThrow();
-  });
-
-  it("should throw if childBirthYear <= birthYear", () => {
-    const input = { ...baseInput, childBirthYear: 1979 };
-    expect(() => calculateCollegeTuitionProjection(input)).toThrow();
-  });
-
   it("should throw if childCollegeFirstYear <= childBirthYear", () => {
     const input = { ...baseInput, childCollegeFirstYear: 2010 };
     expect(() => calculateCollegeTuitionProjection(input)).toThrow();

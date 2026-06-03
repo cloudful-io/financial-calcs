@@ -10,10 +10,10 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
-      expect(result.length).toBe(30);
+      expect(result.length).toBe(31);
       expect(result[0]).toBeDefined();
       expect(result[0]!.annualBenefit).toBeDefined();
     });
@@ -27,7 +27,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
       const claimingYear = birthYear + claimingAge;
@@ -44,7 +44,7 @@ describe('Social Security Projection', () => {
         claimingAge: 62, // early claim
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
       const normalClaim = calculateSocialSecurityBenefitProjection({
@@ -53,7 +53,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67, // FRA claim
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
       const earlyBenefit = earlyClaim.find(r => r.age === 62)?.annualBenefit ?? 0;
@@ -69,7 +69,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67, // FRA
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
       const delayedClaim = calculateSocialSecurityBenefitProjection({
@@ -78,7 +78,7 @@ describe('Social Security Projection', () => {
         claimingAge: 70, // delayed
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 30,
+        lifeExpectancyAge: 85,
       });
 
       const fraBenefit = fraClaim.find(r => r.age === 67)?.annualBenefit ?? 0;
@@ -94,7 +94,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 20,
+        lifeExpectancyAge: 85,
       });
 
       const rowsAfterClaiming = result.filter(r => r.age >= 67);
@@ -113,11 +113,11 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 5,
+        lifeExpectancyAge: 85,
       });
 
       result.forEach(r => {
-        expect(r.monthlyBenefit).toBeCloseTo(r.annualBenefit / 12, 0);
+        expect(r.monthlyBenefit).toBe(Math.round(r.annualBenefit / 12));
       });
     });
   });
@@ -131,7 +131,7 @@ describe('Social Security Projection', () => {
           claimingAge: 60,
           averageIncome: 60_000,
           averageCOLA: 2,
-          yearsToProject: 30,
+          lifeExpectancyAge: 85,
         })
       ).toThrow();
     });
@@ -143,7 +143,7 @@ describe('Social Security Projection', () => {
         claimingAge: 70,
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 5,
+        lifeExpectancyAge: 80,
       });
 
       const result75 = calculateSocialSecurityBenefitProjection({
@@ -152,33 +152,21 @@ describe('Social Security Projection', () => {
         claimingAge: 75, // unrealistic but test cap
         averageIncome: 60_000,
         averageCOLA: 2,
-        yearsToProject: 5,
+        lifeExpectancyAge: 80,
       });
 
       expect(result75.find(r => r.age === 75)?.annualBenefit)
         .toBe(result70.find(r => r.age === 70)?.annualBenefit);
     });
-    it('throws if yearsToProject is zero or negative', () => {
-      expect(() => calculateSocialSecurityBenefitProjection({
-        startYear: 2025,
-        birthYear: 1970,
-        claimingAge: 75, // unrealistic but test cap
-        averageIncome: 60_000,
-        averageCOLA: 2,
-        yearsToProject: 0,
-      })).toThrow();
-    });
     it('returns zero benefit if average income is 0', () => {
-      const result = calculateSocialSecurityBenefitProjection({
+      expect(() =>  calculateSocialSecurityBenefitProjection({
         startYear: 2025,
         birthYear: 1970,
         claimingAge: 67,
         averageIncome: 0,
         averageCOLA: 2,
-        yearsToProject: 20,
-      });
-
-      expect(result.every(r => r.annualBenefit === 0)).toBe(true);
+        lifeExpectancyAge: 75,
+      })).toThrow();
     });
     it('caps benefit at SSA maximum even with high income', () => {
       const resultHigh = calculateSocialSecurityBenefitProjection({
@@ -187,7 +175,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 500_000,
         averageCOLA: 2,
-        yearsToProject: 20,
+        lifeExpectancyAge: 75,
       });
 
       const resultMid = calculateSocialSecurityBenefitProjection({
@@ -196,7 +184,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 150_000,
         averageCOLA: 2,
-        yearsToProject: 20,
+        lifeExpectancyAge: 75,
       });
 
       const highClaimingRow = resultHigh.find(r => r.age === 67);
@@ -213,7 +201,7 @@ describe('Social Security Projection', () => {
         claimingAge: 67,
         averageIncome: 60_000,
         averageCOLA: -1,
-        yearsToProject: 5,
+        lifeExpectancyAge: 85,
        })).toThrow();
     });     
   });

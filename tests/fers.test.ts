@@ -20,7 +20,7 @@ describe('FERS Projection', () => {
         retirementType: 'regular'
       });
 
-      expect(result.length).toBe(30);
+      expect(result.length).toBe(31);
       expect(result[0]).toBeDefined();
       expect(result[0]!.salary).toBeDefined();
     });
@@ -267,7 +267,7 @@ describe('FERS Projection', () => {
       colaPercent: 1,
       pensionMultiplier: 1.1,
       retirementType: 'regular',
-      lifeExpectancyAge: 85,
+      lifeExpectancyAge: 105,
       survivorBenefitReduction: 0,
       serviceEndYear: 2010,
       high3Salary: 100000,
