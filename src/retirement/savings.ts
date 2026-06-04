@@ -429,9 +429,19 @@ export function calculateRMD(birthYear: number, currentAge: number | undefined, 
     age = now.getFullYear() - birthYear;
   }
 
-  if (birthYear <= 1950 && age < 72) return 0;
-  else if (birthYear <= 1959 && age < 73) return 0;
-  else if (age < 75) return 0;
+  // Determine RMD start age based on birth year
+  let rmdStartAge: number;
+
+  if (birthYear <= 1950) {
+    rmdStartAge = 72;
+  } else if (birthYear <= 1959) {
+    rmdStartAge = 73;
+  } else {
+    rmdStartAge = 75;
+  }
+
+  // Not yet required
+  if (age < rmdStartAge) return 0;
   
   const denom = getRmdDenominator(age);
   const rmd = denom > 0 ? bal / denom : 0;
