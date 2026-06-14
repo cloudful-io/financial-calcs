@@ -18,6 +18,16 @@ export interface CollegeTuitionInput {
   estimatedYield: number;               // percent per year
   estimatedFirstYearTuition: number;     
   estimatedInflationRate: number;       // percent per year
+  yearOverrides?: CollegeTuitionYearOverrides;
+}
+
+export type CollegeTuitionYearOverrides = Record<number, CollegeTuitionOverride>;
+
+export interface CollegeTuitionOverride {
+  contribution?: number;
+  tuition?: number;
+  annualWithdraw?: number;
+  endingBalance?: number;
 }
 
 export interface CollegeTuitionProjectionRow {
@@ -29,6 +39,7 @@ export interface CollegeTuitionProjectionRow {
   tuitionAmount: number;
   annualWithdraw: number;
   endingBalance: number;
+  hasOverride?: boolean;
 }
 
 export interface CollegeTuitionValidationError {
@@ -66,6 +77,15 @@ export function validateCollegeTuitionInput(
 export function calculateCollegeTuitionProjection(
   input: CollegeTuitionInput
 ): CollegeTuitionProjectionRow[] {
+  return calculateCollegeTuitionProjectionWithOverrides({
+    ...input,
+    yearOverrides: input.yearOverrides || {},
+  });
+}
+
+export function calculateCollegeTuitionProjectionWithOverrides(
+  input: CollegeTuitionInput
+): CollegeTuitionProjectionRow[] {
   const {
     startYear,
     childBirthYear,
@@ -76,6 +96,7 @@ export function calculateCollegeTuitionProjection(
     estimatedYield,
     estimatedFirstYearTuition,
     estimatedInflationRate,
+    yearOverrides = {},
   } = input;
 
   const errors = validateCollegeTuitionInput(input);
@@ -95,36 +116,70 @@ export function calculateCollegeTuitionProjection(
     const age = year - childBirthYear;
     const beginningBalance = balance;
 
-    // Contribution stops after last college year
-    const contribution =
-      year <= childCollegeLastYear ? annualContribution : 0;
+    const override = yearOverrides[year] ?? {};
+    const hasOverride = Object.keys(override).length > 0;
 
-    // Yield is always based on beginning balance
-    const yieldAmount = computeYield(beginningBalance, estimatedYield);
+    // 1. Contribution
+    let contribution = year <= childCollegeLastYear ? annualContribution : 0;
+    if (override.contribution !== undefined) {
+      contribution = Math.max(override.contribution, 0);
+    }
 
-    // Tuition cost in future dollars
+    // 2. Tuition cost in future dollars
     let tuitionAmount = 0;
     if (isInCollegeYear(year, childCollegeFirstYear, childCollegeLastYear)) {
       const yearsSinceStart = year - childCollegeFirstYear;
       tuitionAmount = computeTuitionForYear(estimatedFirstYearTuition, estimatedInflationRate, yearsSinceStart);
     }
+    if (override.tuition !== undefined) {
+      tuitionAmount = Math.max(override.tuition, 0);
+    }
 
-    // Actual withdrawal is capped at available funds
+    // 3. Yield (tentative)
+    let yieldAmount = computeYield(beginningBalance, estimatedYield);
+    let yieldPercent = estimatedYield;
+
+    // 4. Actual withdrawal
     const availableFunds = beginningBalance + contribution + yieldAmount;
-    const annualWithdraw = Math.min(tuitionAmount, availableFunds);
+    let annualWithdraw = Math.min(tuitionAmount, availableFunds);
+    if (override.annualWithdraw !== undefined) {
+      annualWithdraw = Math.max(override.annualWithdraw, 0);
+    }
 
-    // Update balance
-    balance = availableFunds - annualWithdraw;
+    // 5. Ending balance
+    let endingBalance = beginningBalance + contribution + yieldAmount - annualWithdraw;
+    if (override.endingBalance !== undefined) {
+      endingBalance = Math.max(override.endingBalance, 0);
+    }
+
+    // 6. Recalculate yield if any of tuition, annualWithdraw, or endingBalance is overridden
+    const isAnyYieldTargetOverridden =
+      override.tuition !== undefined ||
+      override.annualWithdraw !== undefined ||
+      override.endingBalance !== undefined;
+
+    if (isAnyYieldTargetOverridden) {
+      if (beginningBalance > 0) {
+        yieldAmount = endingBalance - beginningBalance - contribution + annualWithdraw;
+        yieldPercent = (yieldAmount / beginningBalance) * 100;
+      } else {
+        yieldAmount = 0;
+        yieldPercent = 0;
+      }
+    }
+
+    balance = endingBalance;
 
     data.push({
       year,
       age,
       beginningBalance,
       contribution,
-      yieldPercent: estimatedYield,
+      yieldPercent: Math.round(yieldPercent * 100) / 100,
       tuitionAmount,
       annualWithdraw,
-      endingBalance: balance,
+      endingBalance,
+      hasOverride,
     });
   }
 

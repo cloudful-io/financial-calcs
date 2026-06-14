@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateCollegeTuitionProjection,
+  calculateCollegeTuitionProjectionWithOverrides,
   CollegeTuitionInput,
 } from "../src/college/tuition"; // adjust path
 
@@ -71,5 +72,97 @@ describe("calculateCollegeTuitionProjection", () => {
   it("should throw if estimatedFirstYearTuition <= 0", () => {
     const input = { ...baseInput, estimatedFirstYearTuition: 0 };
     expect(() => calculateCollegeTuitionProjection(input)).toThrow();
+  });
+
+  // --- Overrides ---
+  describe("with overrides", () => {
+    it("should apply contribution override", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2026: { contribution: 10000 },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2026 = result.find(r => r.year === 2026)!;
+      expect(row2026.contribution).toBe(10000);
+      expect(row2026.hasOverride).toBe(true);
+    });
+
+    it("should apply tuition override and recalculate yield percent", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2028: { tuition: 30000 },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2028 = result.find(r => r.year === 2028)!;
+      expect(row2028.tuitionAmount).toBe(30000);
+      expect(row2028.hasOverride).toBe(true);
+      expect(row2028.yieldPercent).toBe(5);
+    });
+
+    it("should apply annualWithdraw override and recalculate yield percent", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2028: { annualWithdraw: 5000 },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2028 = result.find(r => r.year === 2028)!;
+      expect(row2028.annualWithdraw).toBe(5000);
+      expect(row2028.hasOverride).toBe(true);
+      expect(row2028.yieldPercent).toBe(5);
+    });
+
+    it("should apply endingBalance override and recalculate yield percent (positive yield)", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2026: { endingBalance: 25000 },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2026 = result.find(r => r.year === 2026)!;
+      expect(row2026.endingBalance).toBe(25000);
+      expect(row2026.yieldPercent).toBeCloseTo(29.03, 1);
+      expect(row2026.hasOverride).toBe(true);
+    });
+
+    it("should apply endingBalance override and recalculate yield percent (negative yield / market loss)", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2026: { endingBalance: 10000 },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2026 = result.find(r => r.year === 2026)!;
+      expect(row2026.endingBalance).toBe(10000);
+      expect(row2026.yieldPercent).toBeCloseTo(-67.74, 1);
+      expect(row2026.hasOverride).toBe(true);
+    });
+
+    it("should apply multiple overrides simultaneously", () => {
+      const input: CollegeTuitionInput = {
+        ...baseInput,
+        yearOverrides: {
+          2026: {
+            contribution: 2000,
+            annualWithdraw: 1000,
+            endingBalance: 18000,
+          },
+        },
+      };
+      const result = calculateCollegeTuitionProjectionWithOverrides(input);
+      const row2026 = result.find(r => r.year === 2026)!;
+      expect(row2026.contribution).toBe(2000);
+      expect(row2026.annualWithdraw).toBe(1000);
+      expect(row2026.endingBalance).toBe(18000);
+      expect(row2026.yieldPercent).toBeCloseTo(9.68, 1);
+      expect(row2026.hasOverride).toBe(true);
+    });
   });
 });
